@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト9</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pb-dark:        #1b1a19;
+      --pb-nav:         #201f1e;
+      --pb-canvas:      #f3f2f1;
+      --pb-white:       #ffffff;
+      --pb-border:      #edebe9;
+      --pb-border2:     #d2d0ce;
+      --pb-text:        #252423;
+      --pb-dim:         #605e5c;
+      --pb-gray:        #8a8886;
+      --pb-hover:       #f3f2f1;
+      --pb-blue:        #0078d4;
+      --pb-blue-lt:     #deecf9;
+      --pb-yellow:      #f2c811;
+      --pb-green:       #107c10;
+      --pb-green-lt:    #dff6dd;
+      --pb-orange:      #ca5010;
+      --pb-orange-lt:   #fdf4ec;
+      --pb-red:         #d13438;
+      --pb-plan:        #8899aa;
+      --pb-plan-lt:     #e8eef6;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Meiryo', 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      background: var(--pb-dark);
+      color: var(--pb-text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════
+       TOP BAR
+    ══════════════════════════════════ */
+    .pb-topbar {
+      height: 40px; flex: 0 0 40px;
+      background: var(--pb-dark); color: #fff;
+      display: flex; align-items: center;
+      border-bottom: 1px solid #323130;
+    }
+    .pb-logo {
+      width: 48px; height: 40px; flex: 0 0 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--pb-yellow);
+    }
+    .pb-appname {
+      font-size: 13px; font-weight: 600; color: #fff;
+      padding-right: 16px; border-right: 1px solid #323130;
+      margin-right: 12px; line-height: 40px;
+    }
+    .pb-breadcrumb {
+      flex: 1; display: flex; align-items: center;
+      gap: 5px; font-size: 12px; color: rgba(255,255,255,.55);
+    }
+    .pb-breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
+    .pb-breadcrumb a:hover { color: rgba(255,255,255,.85); text-decoration: underline; }
+    .pb-breadcrumb .cur { color: #fff; }
+    .pb-toolbar { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
+    .pb-tbtn {
+      height: 30px; padding: 0 10px;
+      background: transparent; border: none;
+      color: rgba(255,255,255,.75); font-size: 11px;
+      font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      border-radius: 2px; white-space: nowrap;
+    }
+    .pb-tbtn:hover { background: rgba(255,255,255,.1); }
+    .pb-tbtn.hl { color: var(--pb-yellow); }
+    .pb-tsep { width: 1px; height: 18px; background: #3d3c3b; margin: 0 3px; }
+    .pb-clock {
+      font-size: 11px; color: rgba(255,255,255,.5);
+      padding: 0 14px; white-space: nowrap; border-left: 1px solid #323130;
+    }
+    .pb-clock strong { color: rgba(255,255,255,.8); }
+
+    /* ══════════════════════════════════
+       APP BODY / NAV
+    ══════════════════════════════════ */
+    .pb-body { flex: 1 1 0; display: flex; overflow: hidden; }
+
+    .pb-nav {
+      width: 48px; flex: 0 0 48px;
+      background: var(--pb-nav);
+      display: flex; flex-direction: column;
+      padding: 4px 0; gap: 1px;
+    }
+    .pb-nicon {
+      width: 48px; min-height: 40px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,.55); font-size: 17px;
+      cursor: pointer; gap: 2px;
+      border-left: 3px solid transparent;
+    }
+    .pb-nicon.active {
+      color: #fff; border-left-color: var(--pb-yellow);
+      background: rgba(255,255,255,.07);
+    }
+    .pb-nicon:hover:not(.active) { background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
+    .pb-nicon .nl { font-size: 8px; line-height: 1; }
+    .pb-nav-spacer { flex: 1; }
+
+    /* ══════════════════════════════════
+       CANVAS
+    ══════════════════════════════════ */
+    .pb-canvas-wrap {
+      flex: 1 1 0; display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+    .pb-canvas {
+      flex: 1 1 0; overflow: hidden;
+      background: var(--pb-canvas);
+      padding: 8px; display: flex;
+      flex-direction: column; gap: 8px;
+    }
+
+    /* ══════════════════════════════════
+       VISUAL CONTAINER
+    ══════════════════════════════════ */
+    .pbv {
+      background: var(--pb-white); border-radius: 4px;
+      box-shadow: 0 1.6px 3.6px rgba(0,0,0,.1), 0 0.3px 0.9px rgba(0,0,0,.08);
+      display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+    .pbv:hover > .pbv-hdr .pbv-menu { opacity: 1; }
+    .pbv-hdr {
+      display: flex; align-items: center;
+      padding: 6px 10px 2px; gap: 5px;
+      flex: 0 0 auto; min-height: 28px;
+    }
+    .pbv-title {
+      flex: 1; font-size: 11px; font-weight: 600;
+      color: var(--pb-text); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .pbv-type {
+      font-size: 9px; color: var(--pb-dim);
+      background: var(--pb-hover);
+      border: 1px solid var(--pb-border2);
+      border-radius: 2px; padding: 1px 5px;
+      white-space: nowrap; flex: 0 0 auto;
+    }
+    .pbv-type.custom { background: #fef8ee; color: #7a3800; border-color: #f4c27c; }
+    .pbv-menu {
+      font-size: 13px; color: var(--pb-gray);
+      cursor: pointer; padding: 0 2px;
+      border-radius: 2px; opacity: 0;
+      transition: opacity .15s; flex: 0 0 auto;
+    }
+    .pbv-menu:hover { background: var(--pb-hover); }
+    .pbv-body { flex: 1 1 0; overflow: hidden; padding: 4px 10px 8px; }
+    .pbv-body.np { padding: 0; }
+    .pbv-body.sa { overflow-y: auto; }
+    .pbv-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; pointer-events: none; }
+
+    /* ══════════════════════════════════
+       ROW 1 — KPI CARDS
+    ══════════════════════════════════ */
+    .kpi-row { display: flex; gap: 8px; flex: 0 0 auto; }
+    .pbv-kpi { flex: 1; min-width: 0; }
+    .pbv-kpi .pbv-body {
+      padding: 0 12px 10px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; gap: 1px;
+    }
+    .kv-num { font-size: 30px; font-weight: 300; line-height: 1.1; color: var(--pb-text); }
+    .kv-label { font-size: 10px; color: var(--pb-dim); }
+    .kv-sub { font-size: 10px; font-weight: 600; margin-top: 2px; }
+
+    /* ══════════════════════════════════
+       ROW 2 — MAIN ROW
+    ══════════════════════════════════ */
+    .main-row {
+      flex: 1 1 0; display: flex;
+      gap: 8px; min-height: 0; overflow: hidden;
+    }
+
+    /* ── Gantt visual ── */
+    .gantt-visual { flex: 1 1 0; min-width: 0; }
+    .gantt-visual .pbv-body { padding: 0; display: flex; flex-direction: column; }
+
+    /* Legend */
+    .gantt-legend {
+      flex: 0 0 auto;
+      display: flex; align-items: center;
+      gap: 12px; padding: 4px 12px;
+      border-bottom: 1px solid var(--pb-border);
+      flex-wrap: wrap;
+    }
+    .gl-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--pb-dim); }
+    .gl-swatch { width: 14px; height: 8px; border-radius: 1px; flex: 0 0 14px; }
+
+    /* Time axis */
+    .gantt-taxis {
+      flex: 0 0 28px; display: flex;
+      border-bottom: 2px solid var(--pb-border2);
+      background: var(--pb-hover);
+    }
+    .gt-spacer { flex: 0 0 128px; border-right: 1px solid var(--pb-border2); }
+    .gt-axis   { flex: 1; position: relative; overflow: hidden; }
+    .gt-tick {
+      position: absolute; top: 0; bottom: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding-bottom: 3px;
+      transform: translateX(-50%);
+    }
+    .gt-tick-time {
+      font-family: 'Courier New', monospace;
+      font-size: 9px; color: var(--pb-dim); white-space: nowrap;
+    }
+    .gt-tick-line { width: 1px; height: 3px; background: var(--pb-border2); margin-top: 2px; }
+    .gt-ot-label {
+      position: absolute; top: 4px;
+      font-size: 8px; color: var(--pb-orange);
+      white-space: nowrap; padding-left: 4px;
+    }
+
+    /* Work rows */
+    .gantt-rows {
+      flex: 1 1 0; overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── 1 work = 1 gantt-row = plan+actual pair ── */
+    .gantt-row {
+      display: flex;
+      border-bottom: 2px solid var(--pb-border2);
+      flex: 1 1 0; min-height: 76px;
+    }
+    .gantt-row:last-child { border-bottom: none; }
+    .gantt-row:hover { background: #faf9f8; }
+
+    /* Label column (spans both plan+actual) */
+    .gr-label {
+      flex: 0 0 128px;
+      padding: 6px 8px 6px 12px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 3px;
+      border-right: 1px solid var(--pb-border2);
+      background: var(--pb-white);
+      position: sticky; left: 0; z-index: 4;
+    }
+    .gantt-row:hover .gr-label { background: #faf9f8; }
+    .gr-accent {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 2px 0 0 2px;
+    }
+    .gr-name  { font-size: 12px; font-weight: 700; line-height: 1.2; }
+    .gr-sub   { font-size: 9px; color: var(--pb-dim); }
+    .gr-badge {
+      display: inline-flex; align-items: center;
+      gap: 2px; font-size: 8px; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px; width: fit-content;
+    }
+    .gb-ok   { background: var(--pb-green-lt); color: #054b16; }
+    .gb-warn { background: var(--pb-orange-lt); color: #7a2e0e; }
+    .gb-idle { background: var(--pb-hover); color: var(--pb-dim); border: 1px solid var(--pb-border2); }
+
+    /* Right: plan+actual tracks stacked */
+    .gr-tracks {
+      flex: 1; display: flex; flex-direction: column;
+      min-width: 0;
+    }
+    .gr-sub-row {
+      flex: 1 1 0; display: flex; min-height: 0;
+    }
+    .gr-sub-row.plan-row   { border-bottom: 1px solid var(--pb-border); }
+    .gr-sub-row.actual-row {}
+
+    /* 計 / 実 label tab */
+    .gr-sublabel {
+      flex: 0 0 18px; width: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; letter-spacing: .02em;
+      border-right: 1px solid var(--pb-border);
+      user-select: none;
+    }
+    .plan-row   .gr-sublabel { color: var(--pb-blue);  background: #f0f6ff; }
+    .actual-row .gr-sublabel { color: var(--pb-green); background: #f0fdf4; }
+
+    /* Track */
+    .gr-track {
+      flex: 1; position: relative; overflow: hidden;
+    }
+
+    /* Grid, overlays */
+    .gr-gridline {
+      position: absolute; top: 0; bottom: 0;
+      width: 1px; background: var(--pb-border);
+      pointer-events: none; z-index: 0;
+    }
+    .gr-gridline.major { background: var(--pb-border2); }
+    .gr-ot-zone {
+      position: absolute; top: 0; bottom: 0;
+      background: rgba(202,80,16,.04);
+      border-left: 1px dashed rgba(202,80,16,.3);
+      pointer-events: none; z-index: 0;
+    }
+    .gr-shift-end {
+      position: absolute; top: 0; bottom: 0;
+      width: 1.5px; background: rgba(202,80,16,.35);
+      pointer-events: none; z-index: 2;
+    }
+    .gr-now {
+      position: absolute; top: 0; bottom: 0;
+      width: 2px; background: var(--pb-red);
+      pointer-events: none; z-index: 6;
+    }
+    /* Arrow only on actual rows */
+    .actual-row .gr-now::after {
+      content: '▼';
+      position: absolute; top: -11px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 7px; font-weight: 700;
+      color: var(--pb-red); white-space: nowrap;
+    }
+
+    /* ── Process bars ── */
+    .gr-bar {
+      position: absolute;
+      top: 16%; height: 68%;
+      border-radius: 2px;
+      display: flex; align-items: center;
+      overflow: hidden; z-index: 3;
+      cursor: pointer; box-sizing: border-box;
+    }
+    .gr-bar:hover { filter: brightness(1.08); z-index: 10; }
+    .gb-label {
+      padding: 0 4px; white-space: nowrap;
+      display: flex; flex-direction: column;
+    }
+    .gb-id   { font-size: 8px; font-weight: 700; line-height: 1.3; }
+    .gb-name { font-size: 7px; line-height: 1.2; opacity: .85; }
+
+    /* Plan bar */
+    .gb-plan { background: #e8eef6; border: 1px solid #b0bbcc; color: #4a5869; }
+
+    /* Actual bars */
+    .gb-done      { background: #e8f5e9; border: 1px solid #107c10; color: #054b16; }
+    .gb-done-late { background: #fff8dc; border: 1px solid #c8a600; color: #7a5700; }
+    .gb-act-done  { background: var(--pb-blue-lt); border: 1px solid var(--pb-blue); color: #004e8c; border-right: none; border-radius: 2px 0 0 2px; }
+    .gb-act-rem   { background: rgba(0,120,212,.06); border: 1.5px dashed rgba(0,120,212,.45); color: rgba(0,120,212,.55); border-left: none; border-radius: 0 2px 2px 0; }
+    .gb-del-done  { background: var(--pb-orange-lt); border: 1px solid var(--pb-orange); color: #7a2e0e; border-right: none; border-radius: 2px 0 0 2px; }
+    .gb-del-rem   { background: rgba(202,80,16,.05); border: 1.5px dashed rgba(202,80,16,.45); color: rgba(202,80,16,.55); border-left: none; border-radius: 0 2px 2px 0; }
+
+    /* Pulsing for active/delayed */
+    @keyframes pbi-blink-b { 0%,100%{opacity:1} 50%{opacity:.55} }
+    @keyframes pbi-blink-o { 0%,100%{opacity:1} 50%{opacity:.5}  }
+    .gb-act-done { animation: pbi-blink-b 1.3s ease-in-out infinite; }
+    .gb-del-done { animation: pbi-blink-o 1.0s ease-in-out infinite; }
+
+    /* Tooltip */
+    .gr-bar .gb-tt {
+      display: none;
+      position: absolute; bottom: calc(100% + 6px); left: 0;
+      background: var(--pb-white); border: 1px solid var(--pb-border2);
+      border-radius: 3px; padding: 7px 11px;
+      font-size: 10px; white-space: nowrap;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      pointer-events: none;
+    }
+    .gr-bar:hover .gb-tt { display: block; }
+    .gb-tt-title { font-weight: 700; color: var(--pb-text); margin-bottom: 5px; font-size: 11px; }
+    .gb-tt-row   { display: flex; gap: 6px; color: var(--pb-dim); line-height: 1.5; font-size: 10px; }
+    .gb-tt-key   { color: var(--pb-gray); min-width: 50px; }
+    .gb-tt-val   { color: var(--pb-text); font-weight: 600; }
+
+    /* ── Right column ── */
+    .right-col {
+      width: 210px; flex: 0 0 210px;
+      display: flex; flex-direction: column; gap: 8px;
+      overflow-y: auto;
+    }
+
+    /* Donut */
+    .donut-wrap { display: flex; align-items: center; gap: 10px; padding: 2px 0 4px; }
+    .donut-ring {
+      width: 76px; height: 76px;
+      border-radius: 50%; flex: 0 0 76px; position: relative;
+    }
+    .donut-hole {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 48px; height: 48px;
+      background: var(--pb-white); border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .dh-val { font-size: 15px; font-weight: 600; color: var(--pb-text); line-height: 1; }
+    .dh-lbl { font-size: 8px; color: var(--pb-dim); margin-top: 1px; }
+    .donut-legend { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .dl-row { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+    .dl-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+    .dl-name { color: var(--pb-dim); flex: 1; }
+    .dl-val  { font-weight: 700; color: var(--pb-text); }
+
+    /* ETA table visual */
+    .eta-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .eta-table th {
+      text-align: left; padding: 2px 6px;
+      font-size: 9px; font-weight: 700;
+      color: var(--pb-dim); text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid var(--pb-border2);
+      background: var(--pb-hover);
+      white-space: nowrap;
+    }
+    .eta-table td { padding: 4px 6px; border-bottom: 1px solid var(--pb-border); vertical-align: middle; }
+    .eta-table tr:last-child td { border-bottom: none; }
+    .eta-table tr:hover td { background: var(--pb-hover); }
+    .eta-work { font-weight: 700; color: var(--pb-text); }
+    .eta-time { font-family: 'Courier New', monospace; color: var(--pb-text); }
+    .eta-badge {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px;
+    }
+    .eb-ok   { background: var(--pb-green-lt); color: #054b16; }
+    .eb-warn { background: var(--pb-orange-lt); color: #7a2e0e; }
+    .eb-idle { background: var(--pb-hover); color: var(--pb-dim); border: 1px solid var(--pb-border2); }
+
+    /* Gauge */
+    .gauge-list { display: flex; flex-direction: column; gap: 8px; }
+    .gi-hdr { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px; }
+    .gi-name { font-weight: 600; color: var(--pb-text); }
+    .gi-pct  { color: var(--pb-dim); }
+    .gi-track-wrap { position: relative; margin-bottom: 2px; }
+    .gi-track { height: 6px; background: var(--pb-hover); border-radius: 3px; }
+    .gi-fill  { height: 100%; border-radius: 3px; }
+    .gi-target {
+      position: absolute; top: -3px;
+      width: 2px; height: 12px;
+      background: var(--pb-text); border-radius: 1px;
+      transform: translateX(-50%);
+    }
+    .gi-minmax { display: flex; justify-content: space-between; font-size: 8px; color: var(--pb-gray); }
+
+    /* ══════════════════════════════════
+       ROW 3 — BOTTOM
+    ══════════════════════════════════ */
+    .bottom-row { flex: 0 0 auto; display: flex; gap: 8px; }
+
+    .slicer-visual { width: 136px; flex: 0 0 136px; }
+    .sl-item {
+      display: flex; align-items: center;
+      gap: 6px; padding: 3px 4px;
+      border-radius: 2px; cursor: pointer;
+    }
+    .sl-item.sel { background: var(--pb-blue-lt); }
+    .sl-item:hover:not(.sel) { background: var(--pb-hover); }
+    .sl-cb {
+      width: 12px; height: 12px; border-radius: 2px;
+      border: 1.5px solid var(--pb-gray);
+      display: flex; align-items: center;
+      justify-content: center; flex: 0 0 12px; font-size: 8px;
+    }
+    .sl-item.sel .sl-cb { background: var(--pb-blue); border-color: var(--pb-blue); color: #fff; }
+    .sl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; }
+    .sl-label { font-size: 11px; color: var(--pb-text); }
+
+    .alert-visual { flex: 1; }
+    .al-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .al-table th {
+      text-align: left; padding: 3px 8px;
+      background: var(--pb-hover); font-size: 9px;
+      font-weight: 700; color: var(--pb-dim);
+      text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 1px solid var(--pb-border2); white-space: nowrap;
+    }
+    .al-table td { padding: 3px 8px; border-bottom: 1px solid var(--pb-border); vertical-align: middle; }
+    .al-table tr:last-child td { border-bottom: none; }
+    .al-table tr:hover td { background: var(--pb-hover); }
+    .al-time { font-family: 'Courier New', monospace; color: var(--pb-dim); white-space: nowrap; }
+    .al-icon-ok   { color: var(--pb-green); }
+    .al-icon-warn { color: var(--pb-orange); }
+    .al-work { font-weight: 700; color: var(--pb-text); white-space: nowrap; }
+    .al-msg  { color: var(--pb-dim); }
+    .mrc-badge {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px;
+    }
+    .mb-ok   { background: var(--pb-green-lt); color: #054b16; }
+    .mb-warn { background: var(--pb-orange-lt); color: #7a2e0e; }
+
+    /* ══════════════════════════════════
+       STATUS BAR / PAGE TABS
+    ══════════════════════════════════ */
+    .pb-statusbar {
+      flex: 0 0 22px; background: var(--pb-hover);
+      border-top: 1px solid var(--pb-border);
+      display: flex; align-items: center;
+      padding: 0 10px; gap: 14px;
+      font-size: 10px; color: var(--pb-dim);
+    }
+    .pb-statusbar strong { color: var(--pb-text); }
+    .pb-pagetabs {
+      flex: 0 0 30px; background: var(--pb-white);
+      border-top: 1px solid var(--pb-border);
+      display: flex; align-items: stretch;
+      padding: 0 10px; gap: 0;
+    }
+    .pb-ptab {
+      padding: 0 14px; font-size: 11px;
+      color: var(--pb-dim); border-bottom: 2px solid transparent;
+      cursor: pointer; display: flex; align-items: center; white-space: nowrap;
+    }
+    .pb-ptab.active { color: var(--pb-blue); border-bottom-color: var(--pb-blue); font-weight: 600; }
+    .pb-ptab:hover:not(.active) { color: var(--pb-text); background: var(--pb-hover); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--pb-border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="pb-topbar">
+  <div class="pb-logo">⚡</div>
+  <div class="pb-appname">Power BI</div>
+  <div class="pb-breadcrumb">
+    <a href="index.html">生産管理</a>
+    <span>›</span>
+    <span class="cur">生産管理板</span>
+    <span style="font-size:9px;color:rgba(255,255,255,.35);background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.15);border-radius:2px;padding:1px 5px;margin-left:4px;">
+      LAYOUT 9
+    </span>
+  </div>
+  <div style="flex:1"></div>
+  <div class="pb-toolbar">
+    <button class="pb-tbtn">📤 共有</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn">✏ 編集</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn">⚙ 設定</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn hl">✦ Q&amp;A</button>
+  </div>
+  <div class="pb-clock">最終更新: <strong id="clock">--:--</strong></div>
+</div>
+
+<!-- ═══════════ BODY ═══════════ -->
+<div class="pb-body">
+
+  <!-- Left nav -->
+  <div class="pb-nav">
+    <div class="pb-nicon active"><span>⊞</span><span class="nl">ホーム</span></div>
+    <div class="pb-nicon"><span>☆</span><span class="nl">お気に入り</span></div>
+    <div class="pb-nicon"><span>🕐</span><span class="nl">最近</span></div>
+    <div class="pb-nicon"><span>⬡</span><span class="nl">アプリ</span></div>
+    <div class="pb-nicon"><span>⊟</span><span class="nl">作業</span></div>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nicon"><span style="font-size:14px;font-weight:700">?</span><span class="nl">ヘルプ</span></div>
+  </div>
+
+  <!-- Canvas wrap -->
+  <div class="pb-canvas-wrap">
+    <div class="pb-canvas">
+
+      <!-- ════ ROW 1 — KPI Cards ════ -->
+      <div class="kpi-row">
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">本日計画</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body"><div class="kv-num">5</div><div class="kv-label">台 / 第1ライン</div></div>
+          <div class="pbv-accent" style="background:var(--pb-blue)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">進行中</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-blue)">4</div>
+            <div class="kv-label">ワーク</div>
+            <div class="kv-sub" style="color:var(--pb-blue)">▲ 計画通り</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-blue)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">遅延</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-orange)">1</div>
+            <div class="kv-label">ワーク B</div>
+            <div class="kv-sub" style="color:var(--pb-orange)">▲ +4分遅延</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-orange)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">完成済</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-gray)">0</div>
+            <div class="kv-label">台（目標 5台）</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-border2)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">待機</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-gray)">1</div>
+            <div class="kv-label">ワーク C #2</div>
+            <div class="kv-sub" style="color:var(--pb-gray)">◎ 14:00 開始予定</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-border2)"></div>
+        </div>
+
+      </div><!-- /kpi-row -->
+
+      <!-- ════ ROW 2 — MAIN ════ -->
+      <div class="main-row">
+
+        <!-- Plan/Actual Gantt -->
+        <div class="pbv gantt-visual">
+          <div class="pbv-hdr">
+            <div class="pbv-title">計画 / 実績 比較 Gantt — Gantt by MAQ Software (AppSource)</div>
+            <span class="pbv-type custom">Custom Visual</span>
+            <div class="pbv-menu">···</div>
+          </div>
+          <div class="pbv-body np">
+
+            <!-- Legend -->
+            <div class="gantt-legend">
+              <div class="gl-item"><div class="gl-swatch" style="background:#e8eef6;border:1px solid #b0bbcc"></div>計画</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:#e8f5e9;border:1px solid #107c10"></div>完了（定刻）</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:#fff8dc;border:1px solid #c8a600"></div>完了（遅延）</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:var(--pb-blue-lt);border:1px solid var(--pb-blue)"></div>進行中（実績）</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:rgba(0,120,212,.06);border:1.5px dashed rgba(0,120,212,.45)"></div>進行中（残計画）</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:var(--pb-orange-lt);border:1px solid var(--pb-orange)"></div>遅延中（実績）</div>
+              <div class="gl-item"><div class="gl-swatch" style="background:rgba(202,80,16,.05);border:1.5px dashed rgba(202,80,16,.45)"></div>遅延中（残計画）</div>
+              <div class="gl-item" style="margin-left:auto">
+                <div class="gl-swatch" style="background:var(--pb-red);width:3px;height:14px;border-radius:1px"></div>
+                <span style="color:var(--pb-red);font-weight:700">NOW 13:30</span>
+              </div>
+            </div>
+
+            <!-- Time axis -->
+            <div class="gantt-taxis">
+              <div class="gt-spacer"></div>
+              <div class="gt-axis" id="gt-axis"></div>
+            </div>
+
+            <!-- Work rows (plan + actual pairs) -->
+            <div class="gantt-rows" id="gantt-rows"></div>
+
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="right-col">
+
+          <!-- Donut -->
+          <div class="pbv" style="flex:0 0 130px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">ステータス分布</div>
+              <span class="pbv-type">Donut Chart</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body">
+              <div class="donut-wrap">
+                <div class="donut-ring" style="background:conic-gradient(
+                  var(--pb-blue)   0deg 216deg,
+                  var(--pb-orange) 216deg 288deg,
+                  var(--pb-gray)   288deg 360deg
+                );">
+                  <div class="donut-hole">
+                    <div class="dh-val">5</div>
+                    <div class="dh-lbl">ワーク</div>
+                  </div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-blue)"></div><span class="dl-name">正常</span><span class="dl-val">3</span></div>
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-orange)"></div><span class="dl-name">遅延</span><span class="dl-val">1</span></div>
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-gray)"></div><span class="dl-name">待機</span><span class="dl-val">1</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ETA Table -->
+          <div class="pbv" style="flex:0 0 158px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">完了予測</div>
+              <span class="pbv-type">Table</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body np">
+              <table class="eta-table">
+                <thead>
+                  <tr><th>ワーク</th><th>予測完了</th><th>判定</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="eta-work" style="color:var(--pb-blue)">A #1</td><td class="eta-time">16:00</td><td><span class="eta-badge eb-ok">定刻</span></td></tr>
+                  <tr><td class="eta-work" style="color:var(--pb-blue)">A #2</td><td class="eta-time">14:15</td><td><span class="eta-badge eb-ok">定刻</span></td></tr>
+                  <tr><td class="eta-work" style="color:var(--pb-orange)">B</td>  <td class="eta-time">14:04</td><td><span class="eta-badge eb-warn">遅延</span></td></tr>
+                  <tr><td class="eta-work" style="color:var(--pb-green)">C #1</td><td class="eta-time">14:00</td><td><span class="eta-badge eb-ok">定刻</span></td></tr>
+                  <tr><td class="eta-work" style="color:var(--pb-gray)">C #2</td><td class="eta-time">16:00</td><td><span class="eta-badge eb-idle">待機</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Gauge -->
+          <div class="pbv" style="flex:1 1 0;min-height:110px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">工程進捗</div>
+              <span class="pbv-type">Gauge</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body sa" style="padding:4px 10px 8px">
+              <div class="gauge-list" id="gauge-list"></div>
+            </div>
+          </div>
+
+        </div><!-- /right-col -->
+      </div><!-- /main-row -->
+
+      <!-- ════ ROW 3 — BOTTOM ════ -->
+      <div class="bottom-row">
+
+        <!-- Slicer -->
+        <div class="pbv slicer-visual">
+          <div class="pbv-hdr"><div class="pbv-title">製品フィルター</div><span class="pbv-type">Slicer</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body" style="padding:3px 8px 6px">
+            <div class="sl-item sel"><div class="sl-cb">✓</div><div class="sl-dot" style="background:var(--pb-blue)"></div><span class="sl-label">製品α (WORK A)</span></div>
+            <div class="sl-item sel"><div class="sl-cb">✓</div><div class="sl-dot" style="background:var(--pb-green)"></div><span class="sl-label">製品β (WORK B)</span></div>
+            <div class="sl-item sel"><div class="sl-cb">✓</div><div class="sl-dot" style="background:var(--pb-orange)"></div><span class="sl-label">製品γ (WORK C)</span></div>
+          </div>
+        </div>
+
+        <!-- Alert table -->
+        <div class="pbv alert-visual">
+          <div class="pbv-hdr"><div class="pbv-title">アラートログ</div><span class="pbv-type">Table</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body np" style="overflow-x:auto">
+            <table class="al-table">
+              <thead>
+                <tr><th>時刻</th><th style="width:20px"></th><th>ワーク</th><th>メッセージ</th><th>種別</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="al-time">13:28</td><td class="al-icon-warn">⚠</td><td class="al-work">WORK B</td><td class="al-msg">P15 出荷 開始（+4分遅延）</td><td><span class="mrc-badge mb-warn">遅延</span></td></tr>
+                <tr><td class="al-time">12:50</td><td class="al-icon-warn">⚠</td><td class="al-work">WORK B</td><td class="al-msg">P14 組立 完了（+2分遅延）</td><td><span class="mrc-badge mb-warn">遅延</span></td></tr>
+                <tr><td class="al-time">12:00</td><td class="al-icon-ok">✓</td><td class="al-work">WORK C #1</td><td class="al-msg">P20 製造・検査 定刻開始</td><td><span class="mrc-badge mb-ok">正常</span></td></tr>
+                <tr><td class="al-time">08:00</td><td class="al-icon-ok">✓</td><td class="al-work">全ライン</td><td class="al-msg">始業確認 OK</td><td><span class="mrc-badge mb-ok">正常</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /bottom-row -->
+    </div><!-- /pb-canvas -->
+
+    <div class="pb-statusbar">
+      <span>データセット: <strong>生産管理_DS</strong></span>
+      <span>更新頻度: <strong>5分毎</strong></span>
+      <span>表示範囲: <strong>08:00 – 18:00</strong></span>
+      <div style="flex:1"></div>
+      <span>フィルター: <strong>なし</strong></span>
+      <span>ページ <strong>1 / 1</strong></span>
+    </div>
+    <div class="pb-pagetabs">
+      <div class="pb-ptab active">計画/実績 比較</div>
+      <div class="pb-ptab">工程詳細</div>
+      <div class="pb-ptab">アラート履歴</div>
+    </div>
+
+  </div><!-- /pb-canvas-wrap -->
+</div><!-- /pb-body -->
+
+<script>
+// ── Clock ──
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// ── Timeline config ──
+const SHIFT_START = 8 * 60;
+const SHIFT_TOTAL = 10 * 60;
+const NOW_STR     = '13:30';
+
+function toMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+function pct(t)   { return Math.max(0,Math.min(100,(toMin(t)-SHIFT_START)/SHIFT_TOTAL*100)); }
+function wPct(s,e){ return Math.max(0,(toMin(e)-toMin(s))/SHIFT_TOTAL*100); }
+const NOW_PCT = pct(NOW_STR);
+
+// ── Work data ──
+const WORKS = [
+  {
+    label:'WORK A #1', color:'#0078d4', accentColor:'#0078d4',
+    status:'ok', badge:'● 正常進行', badgeCls:'gb-ok',
+    lot:'A-001', note:null,
+    procs:[
+      {id:'P01',name:'材料投入',  state:'done',      as:'08:00',ae:'08:28',ps:'08:00',pe:'08:30'},
+      {id:'P02',name:'切断加工',  state:'done-late', as:'08:28',ae:'09:32',ps:'08:30',pe:'09:30'},
+      {id:'P03',name:'穴あけ',    state:'done',      as:'09:32',ae:'10:31',ps:'09:30',pe:'10:30'},
+      {id:'P04',name:'組付',      state:'done-late', as:'10:31',ae:'12:02',ps:'10:30',pe:'12:00'},
+      {id:'P05',name:'配線',      state:'done-late', as:'12:02',ae:'12:52',ps:'12:00',pe:'12:50'},
+      {id:'P06',name:'表面処理',  state:'active',    as:'12:52',ae:null,   ps:'12:50',pe:'14:00'},
+      {id:'P07',name:'中間検査',  state:'idle',      as:null,   ae:null,   ps:'14:00',pe:'14:30'},
+      {id:'P08',name:'最終組付',  state:'idle',      as:null,   ae:null,   ps:'14:30',pe:'15:20'},
+      {id:'P09',name:'最終検査',  state:'idle',      as:null,   ae:null,   ps:'15:20',pe:'15:50'},
+      {id:'P10',name:'出荷梱包',  state:'idle',      as:null,   ae:null,   ps:'15:50',pe:'16:00'},
+    ],
+  },
+  {
+    label:'WORK A #2', color:'#2196f3', accentColor:'#2196f3',
+    status:'ok', badge:'● 正常進行', badgeCls:'gb-ok',
+    lot:'A-002', note:'P01–05 前シフト完了',
+    procs:[
+      {id:'P06',name:'表面処理',  state:'done',      as:'11:30',ae:'12:14',ps:'11:30',pe:'12:15'},
+      {id:'P07',name:'中間検査',  state:'done',      as:'12:14',ae:'12:44',ps:'12:15',pe:'12:45'},
+      {id:'P08',name:'最終組付',  state:'done-late', as:'12:44',ae:'13:26',ps:'12:45',pe:'13:25'},
+      {id:'P09',name:'最終検査',  state:'active',    as:'13:26',ae:null,   ps:'13:25',pe:'13:55'},
+      {id:'P10',name:'出荷梱包',  state:'idle',      as:null,   ae:null,   ps:'13:55',pe:'14:15'},
+    ],
+  },
+  {
+    label:'WORK B', color:'#107c10', accentColor:'#ca5010',
+    status:'warn', badge:'▲ 遅延中', badgeCls:'gb-warn',
+    lot:'B-001', note:null,
+    procs:[
+      {id:'P11',name:'素材カット',state:'done',      as:'11:00',ae:'11:35',ps:'11:00',pe:'11:36'},
+      {id:'P12',name:'加工',      state:'done-late', as:'11:35',ae:'12:15',ps:'11:36',pe:'12:12'},
+      {id:'P13',name:'検査',      state:'done-late', as:'12:15',ae:'12:50',ps:'12:12',pe:'12:48'},
+      {id:'P14',name:'組立',      state:'done-late', as:'12:50',ae:'13:28',ps:'12:48',pe:'13:24'},
+      {id:'P15',name:'出荷',      state:'delayed',   as:'13:28',ae:null,   ps:'13:24',pe:'14:00'},
+    ],
+  },
+  {
+    label:'WORK C #1', color:'#ca5010', accentColor:'#ca5010',
+    status:'ok', badge:'● 正常進行', badgeCls:'gb-ok',
+    lot:'C-001', note:null,
+    procs:[
+      {id:'P20',name:'製造・検査',state:'active', as:'12:00',ae:null,ps:'12:00',pe:'14:00'},
+    ],
+  },
+  {
+    label:'WORK C #2', color:'#8a8886', accentColor:'#8a8886',
+    status:'idle', badge:'◎ 待機中', badgeCls:'gb-idle',
+    lot:'C-002', note:null,
+    procs:[
+      {id:'P20',name:'製造・検査',state:'idle', as:null,ae:null,ps:'14:00',pe:'16:00'},
+    ],
+  },
+];
+
+// ── Build time axis ──
+const axisEl = document.getElementById('gt-axis');
+for (let h=8; h<=18; h++) {
+  const t = String(h).padStart(2,'0')+':00';
+  const tick = document.createElement('div');
+  tick.className = 'gt-tick';
+  tick.style.left = pct(t)+'%';
+  tick.innerHTML = `<span class="gt-tick-time">${t}</span><span class="gt-tick-line"></span>`;
+  axisEl.appendChild(tick);
+}
+const otLbl = document.createElement('span');
+otLbl.className = 'gt-ot-label';
+otLbl.style.left = pct('17:00')+'%';
+otLbl.textContent = '残業帯';
+axisEl.appendChild(otLbl);
+
+// ── Helper: add grid elements to a track ──
+function addGrid(track, showArrow) {
+  for (let h=8; h<=18; h++) {
+    const g = document.createElement('div');
+    g.className = 'gr-gridline'+(h%2===0?' major':'');
+    g.style.left = pct(String(h).padStart(2,'0')+':00')+'%';
+    track.appendChild(g);
+  }
+  const ot = document.createElement('div');
+  ot.className = 'gr-ot-zone';
+  ot.style.left  = pct('17:00')+'%';
+  ot.style.width = wPct('17:00','18:00')+'%';
+  track.appendChild(ot);
+  const se = document.createElement('div');
+  se.className = 'gr-shift-end';
+  se.style.left = pct('17:00')+'%';
+  track.appendChild(se);
+  const nw = document.createElement('div');
+  nw.className = 'gr-now';
+  nw.style.left = NOW_PCT+'%';
+  if (showArrow) nw.classList.add('show-arrow');
+  track.appendChild(nw);
+}
+
+// ── State label map ──
+const STATE_LABEL = {
+  done:'完了（定刻）','done-late':'完了（遅延）',
+  active:'進行中',delayed:'遅延進行中',idle:'未着手',
+};
+
+// ── Build gantt rows ──
+const rowsEl = document.getElementById('gantt-rows');
+
+WORKS.forEach(work => {
+  const row = document.createElement('div');
+  row.className = 'gantt-row';
+
+  // Label column
+  const lbl = document.createElement('div');
+  lbl.className = 'gr-label';
+  lbl.innerHTML =
+    `<div class="gr-accent" style="background:${work.accentColor}"></div>` +
+    `<div class="gr-name" style="color:${work.color}">${work.label}</div>` +
+    `<span class="gr-badge ${work.badgeCls}">${work.badge}</span>` +
+    `<div class="gr-sub">LOT: ${work.lot}</div>` +
+    (work.note ? `<div class="gr-sub">${work.note}</div>` : '');
+
+  // Tracks container
+  const tracks = document.createElement('div');
+  tracks.className = 'gr-tracks';
+
+  // ── PLAN row ──
+  const planRow = document.createElement('div');
+  planRow.className = 'gr-sub-row plan-row';
+  const planLbl = document.createElement('div');
+  planLbl.className = 'gr-sublabel';
+  planLbl.textContent = '計';
+  const planTrack = document.createElement('div');
+  planTrack.className = 'gr-track';
+  addGrid(planTrack, false);
+  work.procs.forEach(p => {
+    const bar = document.createElement('div');
+    bar.className = 'gr-bar gb-plan';
+    bar.style.left  = pct(p.ps)+'%';
+    bar.style.width = Math.max(wPct(p.ps,p.pe),0.4)+'%';
+    bar.innerHTML =
+      `<div class="gb-label"><span class="gb-id">${p.id}</span><span class="gb-name">${p.name}</span></div>` +
+      `<div class="gb-tt">` +
+        `<div class="gb-tt-title">${p.id} — ${p.name}（計画）</div>` +
+        `<div class="gb-tt-row"><span class="gb-tt-key">計画</span><span class="gb-tt-val">${p.ps} – ${p.pe}</span></div>` +
+      `</div>`;
+    planTrack.appendChild(bar);
+  });
+  planRow.appendChild(planLbl);
+  planRow.appendChild(planTrack);
+
+  // ── ACTUAL row ──
+  const actualRow = document.createElement('div');
+  actualRow.className = 'gr-sub-row actual-row';
+  const actualLbl = document.createElement('div');
+  actualLbl.className = 'gr-sublabel';
+  actualLbl.textContent = '実';
+  const actualTrack = document.createElement('div');
+  actualTrack.className = 'gr-track';
+  addGrid(actualTrack, true);
+
+  work.procs.forEach(p => {
+    const sl = STATE_LABEL[p.state] || p.state;
+    const makeTT = (extra) =>
+      `<div class="gb-tt">` +
+        `<div class="gb-tt-title">${p.id} — ${p.name}</div>` +
+        `<div class="gb-tt-row"><span class="gb-tt-key">状態</span><span class="gb-tt-val">${sl}</span></div>` +
+        `<div class="gb-tt-row"><span class="gb-tt-key">計画</span><span class="gb-tt-val">${p.ps} – ${p.pe}</span></div>` +
+        extra +
+      `</div>`;
+
+    if (p.state === 'done' || p.state === 'done-late') {
+      const bar = document.createElement('div');
+      bar.className = `gr-bar ${p.state==='done'?'gb-done':'gb-done-late'}`;
+      bar.style.left  = pct(p.as)+'%';
+      bar.style.width = Math.max(wPct(p.as,p.ae),0.4)+'%';
+      bar.innerHTML =
+        `<div class="gb-label"><span class="gb-id">${p.id}</span><span class="gb-name">${p.name}</span></div>` +
+        makeTT(`<div class="gb-tt-row"><span class="gb-tt-key">実績</span><span class="gb-tt-val">${p.as} – ${p.ae}</span></div>`);
+      actualTrack.appendChild(bar);
+
+    } else if (p.state === 'active' || p.state === 'delayed') {
+      const isDel = p.state === 'delayed';
+      const startP = pct(p.as);
+      const endP   = pct(p.pe);
+      const doneP  = NOW_PCT - startP;
+      const remP   = endP - NOW_PCT;
+      const ttEx =
+        `<div class="gb-tt-row"><span class="gb-tt-key">実績開始</span><span class="gb-tt-val">${p.as}</span></div>` +
+        `<div class="gb-tt-row"><span class="gb-tt-key">現在</span><span class="gb-tt-val">${NOW_STR}</span></div>`;
+
+      if (doneP > 0) {
+        const b = document.createElement('div');
+        b.className = `gr-bar ${isDel?'gb-del-done':'gb-act-done'}`;
+        b.style.left  = startP+'%';
+        b.style.width = Math.max(doneP,0.4)+'%';
+        b.innerHTML =
+          `<div class="gb-label"><span class="gb-id">${p.id}</span><span class="gb-name">${p.name}</span></div>` +
+          makeTT(ttEx);
+        actualTrack.appendChild(b);
+      }
+      if (remP > 0) {
+        const b = document.createElement('div');
+        b.className = `gr-bar ${isDel?'gb-del-rem':'gb-act-rem'}`;
+        b.style.left  = NOW_PCT+'%';
+        b.style.width = Math.max(remP,0.4)+'%';
+        b.innerHTML =
+          `<div class="gb-label"><span class="gb-id" style="opacity:.5">${p.id}</span></div>` +
+          makeTT(ttEx);
+        actualTrack.appendChild(b);
+      }
+      // idle → 実績行には何も描かない
+    }
+  });
+
+  actualRow.appendChild(actualLbl);
+  actualRow.appendChild(actualTrack);
+
+  tracks.appendChild(planRow);
+  tracks.appendChild(actualRow);
+  row.appendChild(lbl);
+  row.appendChild(tracks);
+  rowsEl.appendChild(row);
+});
+
+// ── Gauge list ──
+const GAUGES = [
+  {name:'A #1', pct:50, target:57, color:'var(--pb-blue)'},
+  {name:'A #2', pct:80, target:80, color:'var(--pb-blue)'},
+  {name:'B',    pct:80, target:80, color:'var(--pb-orange)'},
+  {name:'C #1', pct:75, target:75, color:'var(--pb-orange)'},
+  {name:'C #2', pct:0,  target:0,  color:'var(--pb-gray)'},
+];
+const gl = document.getElementById('gauge-list');
+GAUGES.forEach(g => {
+  const item = document.createElement('div');
+  item.innerHTML =
+    `<div class="gi-hdr"><span class="gi-name">${g.name}</span><span class="gi-pct">${g.pct}%</span></div>` +
+    `<div class="gi-track-wrap">` +
+      `<div class="gi-track"><div class="gi-fill" style="width:${g.pct}%;background:${g.color}"></div></div>` +
+      (g.target>0?`<div class="gi-target" style="left:${g.target}%"></div>`:'') +
+    `</div>` +
+    `<div class="gi-minmax"><span>0</span><span>100%</span></div>`;
+  gl.appendChild(item);
+});
+</script>
+</body>
+</html>

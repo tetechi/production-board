@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト1</title>
+  <link rel="stylesheet" href="assets/style-common.css">
+  <style>
+    /* ===== LAYOUT ===== */
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 18px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hd-left { display: flex; flex-direction: column; gap: 1px; }
+    .hd-top  { display: flex; align-items: baseline; gap: 10px; }
+    .hd-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 22px;
+      letter-spacing: .12em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .hd-layout-tag {
+      font-size: 10px;
+      color: var(--blue);
+      border: 1px solid #93c5fd;
+      background: var(--tint-blue);
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: .04em;
+    }
+    .hd-meta {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: .04em;
+    }
+    .hd-meta span { color: var(--border2); margin: 0 4px; }
+
+    /* KPI bar */
+    .kpi-bar { display: flex; gap: 6px; }
+    .kpi-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+      min-width: 64px;
+    }
+    .kpi-label { font-size: 9px; color: var(--dim); letter-spacing: .04em; white-space: nowrap; }
+    .kpi-val   { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; line-height: 1.1; }
+    .kv-sub  { color: var(--sub); }
+    .kv-blue { color: var(--blue); }
+    .kv-warn { color: var(--yellow); }
+    .kv-ok   { color: var(--green); }
+    .kv-red  { color: var(--red); }
+
+    /* clock */
+    .hd-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+    }
+    .clock {
+      font-family: 'DM Mono', monospace;
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1;
+    }
+    .clock-meta { font-size: 10px; color: var(--dim); }
+    .back-link {
+      font-size: 10px;
+      color: var(--dim);
+      text-decoration: none;
+      letter-spacing: .04em;
+      margin-top: 2px;
+    }
+    .back-link:hover { color: var(--sub); }
+
+    /* ===== MAIN ===== */
+    .main {
+      flex: 1 1 0;
+      display: grid;
+      grid-template-columns: 1fr 196px;
+      overflow: hidden;
+    }
+
+    .cards-col {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding: 10px 8px 10px 14px;
+      overflow-y: auto;
+    }
+
+    /* ===== WORK CARD ===== */
+    .work-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      display: grid;
+      grid-template-columns: 108px 1fr 178px 148px;
+      min-height: 0;
+      flex: 1 1 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .work-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 7px 0 0 7px;
+    }
+    .work-card.s-ok    ::before,
+    .work-card.s-ok::before    { background: var(--green); }
+    .work-card.s-warn::before  { background: var(--yellow); }
+    .work-card.s-idle::before  { background: var(--dim); }
+
+    /* ── ID ── */
+    .wc-id {
+      padding: 10px 10px 10px 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      border-right: 1px solid var(--border);
+    }
+    .wc-name {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 24px;
+      letter-spacing: .06em;
+      line-height: 1;
+    }
+    .wc-num  { font-size: 10px; font-weight: 700; color: var(--dim); letter-spacing: .04em; }
+    .wc-prod { font-size: 11px; color: var(--sub); margin-top: 1px; }
+    .wc-lot  { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--dim); margin-top: 1px; }
+    .wc-note { font-size: 9px; color: var(--dim); font-style: italic; }
+
+    /* ── Flow ── */
+    .wc-flow {
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .flow-label { font-size: 9px; color: var(--dim); letter-spacing: .04em; margin-bottom: 2px; }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      padding-bottom: 2px;
+      gap: 0;
+      width: 100%;
+    }
+
+    .proc-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      flex: 0 0 auto;
+      position: relative;
+    }
+
+    /* 計画時刻（上）: 薄グレー */
+    .proc-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    /* 実績時刻（下）: ステートごとに色分け */
+    .proc-time.real           { color: var(--sub); }
+    .proc-time.real-ok        { color: var(--green); }
+    .proc-time.real-late      { color: var(--yellow); }
+    .proc-time.real-active    { color: var(--blue); }
+    .proc-time.real-delayed   { color: var(--yellow); }
+
+    .proc-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      cursor: pointer;
+      position: relative;
+      transition: transform .12s;
+    }
+    .proc-dot:hover { transform: scale(1.25); z-index: 20; }
+
+    /* 通常完了（定刻） */
+    .pd-done      { background: var(--tint-green);  border-color: var(--green);   color: #166534; }
+    /* 遅延完了（完了したが計画より遅れた） */
+    .pd-done-late { background: var(--tint-yellow); border-color: var(--yellow);  color: #92400e; }
+    /* 進行中 */
+    .pd-active    { background: var(--tint-blue);   border-color: var(--blue);    color: #1e40af; }
+    /* 遅延進行中 */
+    .pd-delayed   { background: var(--tint-yellow); border-color: var(--yellow);  color: #92400e; }
+    /* 未着手 */
+    .pd-idle      { background: var(--panel2); border-color: var(--border2); color: var(--dim); }
+    /* 前シフト完了（A#2 の P01-P05）*/
+    .pd-prev      {
+      background: transparent;
+      border: 1px dashed var(--border2);
+      color: var(--border2);
+      opacity: 0.7;
+    }
+
+    .proc-conn {
+      flex: 1 1 0;
+      min-width: 8px;
+      height: 2px;
+      background: var(--border2);
+      margin-bottom: 18px;
+    }
+    .proc-conn.done { background: #86efac; }
+
+    /* tooltip */
+    .proc-wrap .tt {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 10px;
+      white-space: nowrap;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      pointer-events: none;
+    }
+    .proc-wrap:hover .tt { display: block; }
+    .tt-name { font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .tt-row  { color: var(--sub); }
+    .tt-row b { color: var(--dim); font-weight: 400; }
+
+    /* ── Current ── */
+    .wc-cur {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      border-right: 1px solid var(--border);
+    }
+    .cur-label { font-size: 9px; color: var(--dim); letter-spacing: .04em; }
+    .cur-name  { font-size: 12px; font-weight: 700; color: var(--text); }
+
+    .prog-wrap { position: relative; }
+    .prog-bg {
+      height: 7px;
+      background: var(--panel2);
+      border-radius: 4px;
+      position: relative;
+      overflow: visible;
+    }
+    .prog-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .5s ease;
+    }
+    .pb-ok   { background: linear-gradient(90deg, #86efac, var(--green)); }
+    .pb-warn { background: linear-gradient(90deg, #fcd34d, var(--yellow)); }
+    .pb-idle { background: var(--border); }
+
+    .plan-mk {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 13px;
+      background: rgba(0,0,0,.35);
+      border-radius: 1px;
+      transform: translateX(-50%);
+    }
+
+    .prog-nums {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+    }
+    .pn-actual { font-family: 'DM Mono', monospace; color: var(--sub); }
+    .pn-plan   { font-family: 'DM Mono', monospace; color: var(--dim); }
+
+    .eta-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .eta-label { font-size: 9px; color: var(--dim); }
+    .eta-time  { font-family: 'DM Mono', monospace; font-size: 15px; color: var(--text); }
+    .eta-diff  { font-size: 10px; }
+    .ed-ok   { color: var(--green); }
+    .ed-warn { color: var(--yellow); }
+    .ed-idle { color: var(--dim); }
+
+    /* ── Log ── */
+    .wc-log {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+    }
+    .log-hd { font-size: 9px; color: var(--dim); letter-spacing: .04em; margin-bottom: 3px; }
+    .log-row {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 5px;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+    .lt { font-family: 'DM Mono', monospace; color: var(--dim); }
+    .lm { color: var(--sub); }
+    .lm-ok   { color: var(--green); }
+    .lm-warn { color: var(--yellow); }
+    .lm-idle { color: var(--dim); font-style: italic; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 14px 10px 8px;
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .sb-sec {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 11px;
+    }
+    .sb-title {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* ETA list */
+    .eta-list { display: flex; flex-direction: column; gap: 6px; }
+    .el-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+    }
+    .el-name { color: var(--sub); }
+    .el-time { font-family: 'DM Mono', monospace; color: var(--text); font-size: 12px; }
+    .el-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .eb-ok   { background: var(--tint-green);  color: #166534; border: 1px solid #86efac; }
+    .eb-warn { background: var(--tint-yellow); color: #92400e; border: 1px solid #fcd34d; }
+    .eb-idle { background: var(--panel2); color: var(--dim); border: 1px solid var(--border); }
+
+    /* gauge */
+    .gauge-list { display: flex; flex-direction: column; gap: 7px; }
+    .gv-row { display: flex; flex-direction: column; gap: 3px; }
+    .gv-hd  { display: flex; justify-content: space-between; font-size: 10px; }
+    .gv-name { color: var(--sub); }
+    .gv-pct  { font-family: 'DM Mono', monospace; color: var(--text); }
+    .gv-track { height: 4px; background: var(--panel2); border-radius: 2px; overflow: hidden; }
+    .gv-fill  { height: 100%; border-radius: 2px; }
+
+    /* 生産実績 */
+    .pr-list { display: flex; flex-direction: column; gap: 10px; }
+    .pr-row  { display: flex; flex-direction: column; gap: 5px; }
+    .pr-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .pr-name { font-size: 11px; color: var(--sub); font-weight: 700; }
+    .pr-frac { font-family: 'DM Mono', monospace; }
+    .pr-done  { font-size: 20px; color: var(--text); line-height: 1; }
+    .pr-slash { font-size: 13px; color: var(--dim); margin: 0 1px; }
+    .pr-total { font-size: 13px; color: var(--dim); }
+    .pr-dots  { display: flex; gap: 5px; }
+    .pr-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 20px;
+      border-radius: 4px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      font-weight: 500;
+      cursor: default;
+    }
+    .pr-dot-done   { background: var(--tint-green);  border: 1px solid #86efac; color: #166534; }
+    .pr-dot-active { background: var(--tint-blue);   border: 1px solid #93c5fd; color: var(--blue); }
+    .pr-dot-warn   { background: var(--tint-yellow); border: 1px solid #fcd34d; color: #92400e; }
+    .pr-dot-idle   { background: var(--panel2); border: 1px solid var(--border); color: var(--dim); }
+
+    /* 不良数 */
+    .defect-block {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .df-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .df-label { font-size: 11px; color: var(--sub); }
+    .df-val   { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--text); line-height: 1; }
+    .df-unit  { font-size: 10px; color: var(--dim); margin-left: 2px; }
+
+    /* alerts */
+    .al-list { display: flex; flex-direction: column; gap: 4px; }
+    .al-row {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 4px;
+      font-size: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .al-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .al-t { font-family: 'DM Mono', monospace; color: var(--dim); }
+    .al-m-ok   { color: var(--green); }
+    .al-m-warn { color: var(--yellow); }
+  </style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header>
+  <div class="hd-left">
+    <div class="hd-top">
+      <div class="hd-title">WORK STATUS</div>
+      <span class="hd-layout-tag">LAYOUT 1</span>
+    </div>
+    <div class="hd-meta">第1ライン<span>|</span>シフト 08:00–17:00<span>|</span>残業上限 18:00</div>
+  </div>
+
+  <div class="kpi-bar">
+    <div class="kpi-item">
+      <span class="kpi-label">本日計画</span>
+      <span class="kpi-val kv-sub">5</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">進行中</span>
+      <span class="kpi-val kv-blue">4</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">遅延</span>
+      <span class="kpi-val kv-warn">1</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">完成済</span>
+      <span class="kpi-val kv-ok">0</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">待機</span>
+      <span class="kpi-val" style="color:var(--dim)">1</span>
+    </div>
+  </div>
+
+  <div class="hd-right">
+    <div class="clock" id="clock">--:--</div>
+    <div class="clock-meta" id="clock-date">----/--/--</div>
+    <a href="index.html" class="back-link">← レイアウト選択</a>
+  </div>
+</header>
+
+<!-- ========== MAIN ========== -->
+<div class="main">
+<div class="cards-col">
+
+  <!-- ===== WORK A #1 ===== -->
+  <div class="work-card s-ok">
+    <div class="wc-id">
+      <div class="wc-name" style="color:var(--blue)">WORK A</div>
+      <div class="wc-num">#1 / 製品α</div>
+      <span class="badge badge-ok" style="font-size:10px;padding:1px 7px;">● 正常進行</span>
+      <div class="wc-lot">LOT: A-001</div>
+    </div>
+    <div class="wc-flow">
+      <div class="flow-label">工程フロー — P01〜P10</div>
+      <div class="flow-row" id="flow-a1"></div>
+    </div>
+    <div class="wc-cur">
+      <div class="cur-label">現在工程</div>
+      <div class="cur-name">P06 — 表面処理</div>
+      <div class="prog-wrap">
+        <div class="prog-bg">
+          <div class="prog-bar pb-ok" style="width:57%"></div>
+          <div class="plan-mk" style="left:57%"></div>
+        </div>
+      </div>
+      <div class="prog-nums">
+        <span class="pn-actual">実績 57%</span>
+        <span class="pn-plan">計画 57%</span>
+      </div>
+      <div class="eta-row">
+        <span class="eta-label">完了予測</span>
+        <span class="eta-time">16:00</span>
+        <span class="eta-diff ed-ok">定時内</span>
+      </div>
+    </div>
+    <div class="wc-log">
+      <div class="log-hd">作業ログ</div>
+      <div class="log-row"><span class="lt">12:50</span><span class="lm-ok lm">P06 表面処理 開始</span></div>
+      <div class="log-row"><span class="lt">12:02</span><span class="lm lm-ok">P05 配線 完了</span></div>
+      <div class="log-row"><span class="lt">10:31</span><span class="lm">P04 組付 完了</span></div>
+      <div class="log-row"><span class="lt">08:00</span><span class="lm lm-ok">P01 材料投入 開始</span></div>
+    </div>
+  </div>
+
+  <!-- ===== WORK A #2 ===== -->
+  <div class="work-card s-ok">
+    <div class="wc-id">
+      <div class="wc-name" style="color:var(--cyan)">WORK A</div>
+      <div class="wc-num">#2 / 製品α</div>
+      <span class="badge badge-ok" style="font-size:10px;padding:1px 7px;">● 正常進行</span>
+      <div class="wc-lot">LOT: A-002</div>
+      <div class="wc-note">P01-05 前シフト完了</div>
+    </div>
+    <div class="wc-flow">
+      <div class="flow-label">工程フロー — P06〜P10</div>
+      <div class="flow-row" id="flow-a2"></div>
+    </div>
+    <div class="wc-cur">
+      <div class="cur-label">現在工程</div>
+      <div class="cur-name">P09 — 最終検査</div>
+      <div class="prog-wrap">
+        <div class="prog-bg">
+          <div class="prog-bar pb-ok" style="width:17%"></div>
+          <div class="plan-mk" style="left:17%"></div>
+        </div>
+      </div>
+      <div class="prog-nums">
+        <span class="pn-actual">実績 17%</span>
+        <span class="pn-plan">計画 17%</span>
+      </div>
+      <div class="eta-row">
+        <span class="eta-label">完了予測</span>
+        <span class="eta-time">14:15</span>
+        <span class="eta-diff ed-ok">定時内</span>
+      </div>
+    </div>
+    <div class="wc-log">
+      <div class="log-hd">作業ログ</div>
+      <div class="log-row"><span class="lt">13:25</span><span class="lm lm-ok">P09 最終検査 開始</span></div>
+      <div class="log-row"><span class="lt">12:44</span><span class="lm">P08 最終組付 完了</span></div>
+      <div class="log-row"><span class="lt">12:14</span><span class="lm">P07 中間検査 完了</span></div>
+      <div class="log-row"><span class="lt">11:30</span><span class="lm">P06 表面処理 開始</span></div>
+    </div>
+  </div>
+
+  <!-- ===== WORK B ===== -->
+  <div class="work-card s-warn">
+    <div class="wc-id">
+      <div class="wc-name" style="color:var(--green)">WORK B</div>
+      <div class="wc-num">#1 / 製品β</div>
+      <span class="badge badge-warn" style="font-size:10px;padding:1px 7px;">▲ 遅延中</span>
+      <div class="wc-lot">LOT: B-001</div>
+    </div>
+    <div class="wc-flow">
+      <div class="flow-label">工程フロー — P11〜P15</div>
+      <div class="flow-row" id="flow-b"></div>
+    </div>
+    <div class="wc-cur">
+      <div class="cur-label">現在工程</div>
+      <div class="cur-name">P15 — 出荷</div>
+      <div class="prog-wrap">
+        <div class="prog-bg">
+          <div class="prog-bar pb-warn" style="width:6%"></div>
+          <div class="plan-mk" style="left:17%"></div>
+        </div>
+      </div>
+      <div class="prog-nums">
+        <span class="pn-actual">実績 6%</span>
+        <span class="pn-plan">計画 17%</span>
+      </div>
+      <div class="eta-row">
+        <span class="eta-label">完了予測</span>
+        <span class="eta-time">14:04</span>
+        <span class="eta-diff ed-warn">+4分遅延</span>
+      </div>
+    </div>
+    <div class="wc-log">
+      <div class="log-hd">作業ログ</div>
+      <div class="log-row"><span class="lt">13:28</span><span class="lm lm-warn">P15 出荷 開始（+4分遅延）</span></div>
+      <div class="log-row"><span class="lt">12:50</span><span class="lm">P14 組立 完了</span></div>
+      <div class="log-row"><span class="lt">12:15</span><span class="lm">P13 検査 完了</span></div>
+      <div class="log-row"><span class="lt">11:00</span><span class="lm lm-ok">P11 素材カット 開始</span></div>
+    </div>
+  </div>
+
+  <!-- ===== WORK C #1 ===== -->
+  <div class="work-card s-ok">
+    <div class="wc-id">
+      <div class="wc-name" style="color:var(--orange)">WORK C</div>
+      <div class="wc-num">#1 / 製品γ</div>
+      <span class="badge badge-ok" style="font-size:10px;padding:1px 7px;">● 正常進行</span>
+      <div class="wc-lot">LOT: C-001</div>
+    </div>
+    <div class="wc-flow">
+      <div class="flow-label">工程フロー — P20</div>
+      <div class="flow-row" id="flow-c1"></div>
+    </div>
+    <div class="wc-cur">
+      <div class="cur-label">現在工程</div>
+      <div class="cur-name">P20 — 製造・検査一体</div>
+      <div class="prog-wrap">
+        <div class="prog-bg">
+          <div class="prog-bar pb-ok" style="width:75%"></div>
+          <div class="plan-mk" style="left:75%"></div>
+        </div>
+      </div>
+      <div class="prog-nums">
+        <span class="pn-actual">実績 75%</span>
+        <span class="pn-plan">計画 75%</span>
+      </div>
+      <div class="eta-row">
+        <span class="eta-label">完了予測</span>
+        <span class="eta-time">14:00</span>
+        <span class="eta-diff ed-ok">定時内</span>
+      </div>
+    </div>
+    <div class="wc-log">
+      <div class="log-hd">作業ログ</div>
+      <div class="log-row"><span class="lt">12:00</span><span class="lm lm-ok">P20 製造・検査 開始</span></div>
+      <div class="log-row"><span class="lt">12:00</span><span class="lm">ワークC #2 待機中</span></div>
+    </div>
+  </div>
+
+  <!-- ===== WORK C #2 ===== -->
+  <div class="work-card s-idle">
+    <div class="wc-id">
+      <div class="wc-name" style="color:var(--dim)">WORK C</div>
+      <div class="wc-num">#2 / 製品γ</div>
+      <span class="badge badge-idle" style="font-size:10px;padding:1px 7px;">◎ 待機中</span>
+      <div class="wc-lot">LOT: C-002</div>
+    </div>
+    <div class="wc-flow">
+      <div class="flow-label">工程フロー — P20</div>
+      <div class="flow-row" id="flow-c2"></div>
+    </div>
+    <div class="wc-cur">
+      <div class="cur-label">開始予定</div>
+      <div class="cur-name" style="color:var(--dim)">P20 — 製造・検査一体</div>
+      <div class="prog-wrap">
+        <div class="prog-bg">
+          <div class="prog-bar pb-idle" style="width:0%"></div>
+          <div class="plan-mk" style="left:0%"></div>
+        </div>
+      </div>
+      <div class="prog-nums">
+        <span class="pn-actual" style="color:var(--dim)">実績 0%</span>
+        <span class="pn-plan" style="color:var(--dim)">計画 開始待ち</span>
+      </div>
+      <div class="eta-row">
+        <span class="eta-label">開始予定</span>
+        <span class="eta-time" style="color:var(--dim)">14:00</span>
+        <span class="eta-diff ed-idle">完了 16:00</span>
+      </div>
+    </div>
+    <div class="wc-log">
+      <div class="log-hd">作業ログ</div>
+      <div class="log-row"><span class="lt">--:--</span><span class="lm lm-idle">C#1 完了後 14:00 開始予定</span></div>
+    </div>
+  </div>
+
+</div><!-- /cards-col -->
+
+<!-- ========== SIDEBAR ========== -->
+<div class="sidebar">
+
+  <!-- 生産実績 -->
+  <div class="sb-sec">
+    <div class="sb-title">生産実績</div>
+    <div class="pr-list">
+
+      <div class="pr-row">
+        <div class="pr-header">
+          <span class="pr-name">ワーク<span style="color:var(--blue)">A</span></span>
+          <span class="pr-frac"><span class="pr-done">0</span><span class="pr-slash">/</span><span class="pr-total">2</span></span>
+        </div>
+        <div class="pr-dots">
+          <span class="pr-dot pr-dot-idle" title="A#1 — P10完了待ち">A1</span>
+          <span class="pr-dot pr-dot-idle" title="A#2 — P10完了待ち">A2</span>
+        </div>
+      </div>
+
+      <div class="pr-row">
+        <div class="pr-header">
+          <span class="pr-name">ワーク<span style="color:var(--green)">B</span></span>
+          <span class="pr-frac"><span class="pr-done">0</span><span class="pr-slash">/</span><span class="pr-total">1</span></span>
+        </div>
+        <div class="pr-dots">
+          <span class="pr-dot pr-dot-warn" title="B — P15遅延進行中">B1</span>
+        </div>
+      </div>
+
+      <div class="pr-row">
+        <div class="pr-header">
+          <span class="pr-name">ワーク<span style="color:var(--orange)">C</span></span>
+          <span class="pr-frac"><span class="pr-done">0</span><span class="pr-slash">/</span><span class="pr-total">2</span></span>
+        </div>
+        <div class="pr-dots">
+          <span class="pr-dot pr-dot-active" title="C#1 — P20進行中">C1</span>
+          <span class="pr-dot pr-dot-idle" title="C#2 — 14:00開始待ち">C2</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 不良数 -->
+    <div class="defect-block">
+      <div class="df-row">
+        <span class="df-label">加工不良</span>
+        <span class="df-val">0<span class="df-unit">件</span></span>
+      </div>
+      <div class="df-row">
+        <span class="df-label">材料不良</span>
+        <span class="df-val">0<span class="df-unit">件</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完了予測 -->
+  <div class="sb-sec">
+    <div class="sb-title">完了予測</div>
+    <div class="eta-list">
+      <div class="el-row">
+        <span class="el-name">A #1</span>
+        <span class="el-time">16:00</span>
+        <span class="el-badge eb-ok">OK</span>
+      </div>
+      <div class="el-row">
+        <span class="el-name">A #2</span>
+        <span class="el-time">14:15</span>
+        <span class="el-badge eb-ok">OK</span>
+      </div>
+      <div class="el-row">
+        <span class="el-name">B</span>
+        <span class="el-time">14:04</span>
+        <span class="el-badge eb-warn">遅延</span>
+      </div>
+      <div class="el-row">
+        <span class="el-name">C #1</span>
+        <span class="el-time">14:00</span>
+        <span class="el-badge eb-ok">OK</span>
+      </div>
+      <div class="el-row">
+        <span class="el-name">C #2</span>
+        <span class="el-time">16:00</span>
+        <span class="el-badge eb-idle">待機</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工程進捗ゲージ -->
+  <div class="sb-sec">
+    <div class="sb-title">工程進捗</div>
+    <div class="gauge-list">
+      <div class="gv-row">
+        <div class="gv-hd">
+          <span class="gv-name">A #1 &nbsp;5/10工程</span>
+          <span class="gv-pct">50%</span>
+        </div>
+        <div class="gv-track"><div class="gv-fill" style="width:50%;background:var(--green)"></div></div>
+      </div>
+      <div class="gv-row">
+        <div class="gv-hd">
+          <span class="gv-name">A #2 &nbsp;3/5工程</span>
+          <span class="gv-pct">60%</span>
+        </div>
+        <div class="gv-track"><div class="gv-fill" style="width:60%;background:var(--cyan)"></div></div>
+      </div>
+      <div class="gv-row">
+        <div class="gv-hd">
+          <span class="gv-name">B &nbsp;4/5工程</span>
+          <span class="gv-pct">80%</span>
+        </div>
+        <div class="gv-track"><div class="gv-fill" style="width:80%;background:var(--yellow)"></div></div>
+      </div>
+      <div class="gv-row">
+        <div class="gv-hd">
+          <span class="gv-name">C #1 &nbsp;進行中</span>
+          <span class="gv-pct">75%</span>
+        </div>
+        <div class="gv-track"><div class="gv-fill" style="width:75%;background:var(--orange)"></div></div>
+      </div>
+      <div class="gv-row">
+        <div class="gv-hd">
+          <span class="gv-name">C #2 &nbsp;未開始</span>
+          <span class="gv-pct">0%</span>
+        </div>
+        <div class="gv-track"><div class="gv-fill" style="width:0%;background:var(--dim)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アラートログ -->
+  <div class="sb-sec">
+    <div class="sb-title">アラートログ</div>
+    <div class="al-list">
+      <div class="al-row">
+        <span class="al-t">13:28</span>
+        <span class="al-m-warn">B P15 開始 +4分遅延</span>
+      </div>
+      <div class="al-row">
+        <span class="al-t">12:50</span>
+        <span class="al-m-warn">B P14 完了 +2分遅延</span>
+      </div>
+      <div class="al-row">
+        <span class="al-t">12:00</span>
+        <span class="al-m-ok">C #1 P20 定刻開始</span>
+      </div>
+      <div class="al-row">
+        <span class="al-t">08:00</span>
+        <span class="al-m-ok">全ライン始業確認 OK</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /sidebar -->
+</div><!-- /main -->
+
+<script>
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${hh}:${mm}`;
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  document.getElementById('clock-date').textContent = `${y}/${mo}/${d}`;
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// ===== PROCESS DOT DATA =====
+const FLOWS = {
+  'flow-a1': [
+    { id:'P01', name:'材料投入', state:'done',      plan:'08:00–08:30', actual:'08:00–08:28' }, // 定刻
+    { id:'P02', name:'切断加工', state:'done-late', plan:'08:30–09:30', actual:'08:28–09:32' }, // +2分
+    { id:'P03', name:'穴あけ',   state:'done',      plan:'09:30–10:30', actual:'09:32–10:31' }, // ±1分
+    { id:'P04', name:'組付',     state:'done-late', plan:'10:30–12:00', actual:'10:31–12:02' }, // +2分
+    { id:'P05', name:'配線',     state:'done-late', plan:'12:00–12:50', actual:'12:02–12:52' }, // +2分
+    { id:'P06', name:'表面処理', state:'active',    plan:'12:50–14:00', actual:'12:52–進行中' },
+    { id:'P07', name:'中間検査', state:'idle',      plan:'14:00–14:30', actual:'' },
+    { id:'P08', name:'最終組付', state:'idle',      plan:'14:30–15:20', actual:'' },
+    { id:'P09', name:'最終検査', state:'idle',      plan:'15:20–15:50', actual:'' },
+    { id:'P10', name:'出荷梱包', state:'idle',      plan:'15:50–16:00', actual:'' },
+  ],
+  'flow-a2': [
+    // P01-P05: 前シフト完了（ゴースト表示、P06の位置合わせ用）
+    { id:'P01', name:'材料投入', state:'prev', plan:'前シフト', actual:'' },
+    { id:'P02', name:'切断加工', state:'prev', plan:'前シフト', actual:'' },
+    { id:'P03', name:'穴あけ',   state:'prev', plan:'前シフト', actual:'' },
+    { id:'P04', name:'組付',     state:'prev', plan:'前シフト', actual:'' },
+    { id:'P05', name:'配線',     state:'prev', plan:'前シフト', actual:'' },
+    // P06-P10: 当シフト
+    { id:'P06', name:'表面処理', state:'done',      plan:'11:30–12:15', actual:'11:30–12:14' }, // 定刻
+    { id:'P07', name:'中間検査', state:'done',      plan:'12:15–12:45', actual:'12:14–12:44' }, // 定刻
+    { id:'P08', name:'最終組付', state:'done-late', plan:'12:45–13:25', actual:'12:44–13:26' }, // +1分
+    { id:'P09', name:'最終検査', state:'active',    plan:'13:25–13:55', actual:'13:26–進行中' },
+    { id:'P10', name:'出荷梱包', state:'idle',      plan:'13:55–14:15', actual:'' },
+  ],
+  'flow-b': [
+    { id:'P11', name:'素材カット', state:'done',      plan:'11:00–11:36', actual:'11:00–11:35' }, // 定刻
+    { id:'P12', name:'加工',       state:'done-late', plan:'11:36–12:12', actual:'11:35–12:15' }, // +3分
+    { id:'P13', name:'検査',       state:'done-late', plan:'12:12–12:48', actual:'12:15–12:50' }, // +2分
+    { id:'P14', name:'組立',       state:'done-late', plan:'12:48–13:24', actual:'12:50–13:28' }, // +4分
+    { id:'P15', name:'出荷',       state:'delayed',   plan:'13:24–14:00', actual:'13:28–進行中' },
+  ],
+  'flow-c1': [
+    { id:'P20', name:'製造・検査一体', state:'active', plan:'12:00–14:00', actual:'12:00–進行中' },
+  ],
+  'flow-c2': [
+    { id:'P20', name:'製造・検査一体', state:'idle', plan:'14:00–16:00', actual:'' },
+  ],
+};
+
+const STATE_CLASS = {
+  'done':      'pd-done',
+  'done-late': 'pd-done-late',
+  'active':    'pd-active dot-active',
+  'delayed':   'pd-delayed dot-delayed',
+  'idle':      'pd-idle',
+  'prev':      'pd-prev',
+};
+
+// 実績時刻の文字色（ステートごと）
+const ACTUAL_TIME_CLASS = {
+  'done':      'proc-time real-ok',
+  'done-late': 'proc-time real-late',
+  'active':    'proc-time real-active',
+  'delayed':   'proc-time real-delayed',
+  'idle':      'proc-time real',
+  'prev':      'proc-time real',
+};
+
+function buildFlow(containerId, procs) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const isPrev = s => s === 'prev';
+  const isDone = s => s === 'done' || s === 'done-late';
+
+  procs.forEach((p, i) => {
+    if (i > 0) {
+      const conn = document.createElement('div');
+      const prevState = procs[i - 1].state;
+      conn.className = 'proc-conn' + (isDone(prevState) ? ' done' : '');
+      container.appendChild(conn);
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'proc-wrap';
+
+    // 計画時刻（上）— prev は「前」と表示
+    const tAbove = document.createElement('div');
+    tAbove.className = 'proc-time';
+    tAbove.textContent = isPrev(p.state) ? '前' : (p.plan.split('–')[0] || '');
+    wrap.appendChild(tAbove);
+
+    // ドット
+    const dot = document.createElement('div');
+    dot.className = 'proc-dot ' + (STATE_CLASS[p.state] || 'pd-idle');
+    dot.textContent = p.id;
+    wrap.appendChild(dot);
+
+    // ツールチップ
+    const tt = document.createElement('div');
+    tt.className = 'tt';
+    const stateLabel = {
+      'done': '完了（定刻）', 'done-late': '完了（遅延あり）',
+      'active': '進行中', 'delayed': '遅延進行中',
+      'idle': '未着手', 'prev': '前シフト完了',
+    }[p.state] || p.state;
+    tt.innerHTML = `
+      <div class="tt-name">${p.id} — ${p.name}</div>
+      <div class="tt-row"><b>状態: </b>${stateLabel}</div>
+      ${!isPrev(p.state) ? `<div class="tt-row"><b>計画: </b>${p.plan}</div>` : ''}
+      ${p.actual ? `<div class="tt-row"><b>実績: </b>${p.actual}</div>` : ''}
+    `;
+    wrap.appendChild(tt);
+
+    // 実績時刻（下）— prev・idle は非表示
+    const tBelow = document.createElement('div');
+    tBelow.className = ACTUAL_TIME_CLASS[p.state] || 'proc-time real';
+    if (!isPrev(p.state) && p.actual) {
+      tBelow.textContent = p.actual.split('–')[0];
+    } else {
+      tBelow.textContent = '';
+    }
+    wrap.appendChild(tBelow);
+
+    container.appendChild(wrap);
+  });
+}
+
+Object.keys(FLOWS).forEach(id => buildFlow(id, FLOWS[id]));
+</script>
+</body>
+</html>

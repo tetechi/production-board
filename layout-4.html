@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト4 (Excel風スプレッドシート)</title>
+  <link rel="stylesheet" href="assets/style-common.css">
+  <link rel="stylesheet" href="assets/style-excel.css">
+  <style>
+    body { margin:0; padding:0; overflow:hidden; background:#f0f0f0; }
+    .xl-sheetarea { overflow: auto; }
+
+    /* ── Main table ── */
+    .xl-tbl {
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .xl-tbl th, .xl-tbl td {
+      border: 1px solid #d0d0d0;
+      padding: 0;
+      font-weight: normal;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      font-size: 11px;
+    }
+    .xl-tbl thead th { position: sticky; top: 0; z-index: 20; }
+
+    /* ── Sticky left helpers ── */
+    /* offsets: rn=0, A=40, B=76, C=172  */
+    .sticky-l { position: sticky; z-index: 12; }
+    .sticky-corner { position: sticky; z-index: 30; }
+
+    /* ── Column sizes ── */
+    .col-rn  { width:40px;  min-width:40px; }
+    .col-a   { width:36px;  min-width:36px; }
+    .col-b   { width:96px;  min-width:96px; }
+    .col-c   { width:48px;  min-width:48px; }
+    .col-p   { width:32px;  min-width:32px; } /* process cols */
+    .col-t   { width:76px;  min-width:76px; } /* 状態 */
+    .col-u   { width:88px;  min-width:88px; } /* 進捗% データバー */
+    .col-v   { width:76px;  min-width:76px; } /* 完了予測 */
+
+    /* freeze pane border */
+    .freeze-border { border-right: 2px solid #909090 !important; }
+
+    /* ── Header cells ── */
+    .xl-rn-hdr  { background:#f2f2f2; border-color:#c0c0c0 !important; font-size:10px; color:#555; text-align:right; padding-right:4px; }
+    .xl-col-hdr { background:#f2f2f2; font-size:9px; color:#444; font-weight:700; text-align:center; border-color:#c0c0c0 !important; padding:0 1px; }
+    .xl-corner  { background:#f2f2f2; border-color:#c0c0c0 !important; }
+
+    /* ── Process group header in header row ── */
+    .th-proc-a  { background:#dce6f1 !important; color:#17375e !important; font-size:8px; font-weight:700; text-align:center; border-color:#9dc3e6 !important; }
+    .th-proc-b  { background:#e2efda !important; color:#375623 !important; font-size:8px; font-weight:700; text-align:center; border-color:#a9d08e !important; }
+    .th-proc-c  { background:#fce4d6 !important; color:#833c00 !important; font-size:8px; font-weight:700; text-align:center; border-color:#f4b183 !important; }
+
+    /* ── Row heights ── */
+    .xl-tbl tr.h-title  td { height:26px; }
+    .xl-tbl tr.h-hdr2   td { height:22px; }
+    .xl-tbl tr.h-hdr    td { height:28px; }
+    .xl-tbl tr.h-work   td { height:38px; }
+    .xl-tbl tr.h-sec    td { height:20px; }
+    .xl-tbl tr.h-norm   td { height:22px; }
+    .xl-tbl tr.h-leg    td { height:22px; }
+
+    /* ── Process cell fills (条件付き書式で設定する色 — アニメなし) ── */
+    .xc-done      { background:#e2efda; }
+    .xc-done-late { background:#fff2cc; }
+    .xc-active    { background:#dce6f1; }  /* 静的・アニメなし */
+    .xc-delayed   { background:#fce4d6; }  /* 静的・アニメなし */
+    .xc-idle      { background:#f2f2f2; }
+    .xc-prev      { background:#fafafa; }
+    .xc-na        { background:#ffffff; }
+
+    /* Process label inside cell */
+    .proc-cell {
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      height:100%; font-size:9px; line-height:1.2; padding:1px 2px;
+      text-align:center;
+    }
+    .pc-sym { font-size:10px; font-weight:700; }
+    .pc-id  { font-size:7.5px; color:inherit; opacity:.8; }
+    .xc-done .pc-sym      { color:#375623; }
+    .xc-done-late .pc-sym { color:#7f6000; }
+    .xc-active .pc-sym    { color:#17375e; }
+    .xc-delayed .pc-sym   { color:#833c00; }
+    .xc-idle .pc-sym      { color:#aaa; }
+    .xc-prev .pc-sym      { color:#bfbfbf; }
+
+    /* ── Progress Data Bar (Excelの「データバー」条件付き書式を再現) ── */
+    .xl-databar-cell {
+      padding: 2px 4px !important;
+      position: relative;
+    }
+    .xl-databar-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      opacity: .25; /* 数値テキストと重ねるためトランスペアレント */
+      pointer-events: none;
+    }
+    .xl-databar-val {
+      position: relative; z-index: 1;
+      font-size: 11px; font-weight: 700;
+      width: 100%; text-align: right;
+      padding-right: 4px;
+      display: block;
+    }
+
+    /* ── Fixed data cells ── */
+    .xl-pad  { padding:2px 5px !important; }
+    .xl-c    { text-align:center !important; }
+    .xl-r    { text-align:right !important; }
+    .xl-bold { font-weight:700 !important; }
+    .xf-title   { background:#1f3864; color:#fff; font-weight:700; }
+    .xf-hdr     { background:#d6dce4; color:#1f3864; font-weight:700; }
+    .xf-section { background:#2e75b6; color:#fff; font-weight:700; }
+    .xf-sub     { background:#bdd7ee; color:#17375e; font-weight:700; }
+    .xf-blank   { background:#fff; }
+    .xf-note    { background:#fffde7; color:#555; font-style:italic; font-size:9px; }
+    .xf-subtot  { background:#f2f2f2; font-weight:700; }
+
+    /* Status text */
+    .sb-ok   { color:#375623; font-weight:700; font-size:10px; }
+    .sb-warn { color:#833c00; font-weight:700; font-size:10px; }
+    .sb-idle { color:#aaa;    font-weight:700; font-size:10px; }
+
+    /* Work color accent */
+    .wk-a1 { border-left:3px solid #2056ae !important; }
+    .wk-a2 { border-left:3px solid #0891b2 !important; }
+    .wk-b  { border-left:3px solid #375623 !important; }
+    .wk-c1 { border-left:3px solid #833c00 !important; }
+    .wk-c2 { border-left:3px solid #8896a8 !important; }
+  </style>
+</head>
+<body>
+<div class="xl-app">
+
+  <!-- Title bar -->
+  <div class="xl-titlebar">
+    <span class="xl-filename">生産管理板_工程状況.xlsx</span>
+    <span class="xl-appname">— Microsoft Excel</span>
+    <div class="xl-winbtns">
+      <div class="xl-winbtn">─</div>
+      <div class="xl-winbtn">□</div>
+      <div class="xl-winbtn xl-close">✕</div>
+    </div>
+  </div>
+
+  <!-- Ribbon -->
+  <div class="xl-ribbon">
+    <div class="xl-ribbon-tabs">
+      <div class="xl-rtab">ファイル</div>
+      <div class="xl-rtab xl-active">ホーム</div>
+      <div class="xl-rtab">挿入</div>
+      <div class="xl-rtab">ページレイアウト</div>
+      <div class="xl-rtab">数式</div>
+      <div class="xl-rtab">データ</div>
+      <div class="xl-rtab">校閲</div>
+      <div class="xl-rtab">表示</div>
+    </div>
+    <div class="xl-ribbon-body">
+      <div class="xl-rgrp" style="flex-direction:row;align-items:center;gap:4px;">
+        <div class="xl-rbtn-paste">
+          <span class="xl-rbtn-icon">📋</span>
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <div class="xl-rbtn-sm" style="font-size:9px;">貼り付け</div>
+            <div class="xl-rbtn-row"><div class="xl-rbtn-sm">✂</div><div class="xl-rbtn-sm">📄</div></div>
+          </div>
+        </div>
+        <div class="xl-rgrp-label" style="align-self:flex-end">クリップボード</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content" style="flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:3px;align-items:center;">
+            <div style="border:1px solid #c0c0c0;padding:1px 5px;font-size:11px;background:#fff;min-width:80px;">Calibri</div>
+            <div style="border:1px solid #c0c0c0;padding:1px 3px;font-size:11px;background:#fff;width:28px;">11</div>
+          </div>
+          <div class="xl-rbtn-row">
+            <div class="xl-rbtn-sm" style="font-weight:900;">B</div>
+            <div class="xl-rbtn-sm" style="font-style:italic;">I</div>
+            <div class="xl-rbtn-sm" style="text-decoration:underline;">U</div>
+            <div class="xl-rbtn-sm">⊞</div><div class="xl-rbtn-sm">🎨</div><div class="xl-rbtn-sm">A</div>
+          </div>
+        </div>
+        <div class="xl-rgrp-label">フォント</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">📊</span><span class="xl-rbtn-label">条件付き書式</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">📉</span><span class="xl-rbtn-label">データバー</span></div>
+        </div>
+        <div class="xl-rgrp-label">スタイル</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">➕</span><span class="xl-rbtn-label">挿入</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">➖</span><span class="xl-rbtn-label">削除</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">⚙</span><span class="xl-rbtn-label">書式</span></div>
+        </div>
+        <div class="xl-rgrp-label">セル</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">∑</span><span class="xl-rbtn-label">オートSUM</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">🔍</span><span class="xl-rbtn-label">検索</span></div>
+        </div>
+        <div class="xl-rgrp-label">編集</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formula bar
+       選択セル: U4 (進捗% — Work A#1)
+       数式: 完了工程数 / 全工程数 * 100
+       進捗列には「条件付き書式 → データバー」を適用 -->
+  <div class="xl-formulabar">
+    <div class="xl-namebox">U4</div>
+    <div class="xl-fx-icon">fx</div>
+    <div class="xl-fxbar">=(COUNTIF(D4:M4,"done")+COUNTIF(D4:M4,"done-late"))/COUNTA($D$3:$M$3)*100</div>
+  </div>
+
+  <!-- Sheet area -->
+  <div class="xl-sheetarea">
+    <table class="xl-tbl" id="main-table">
+      <thead id="thead-row"></thead>
+      <tbody id="tbody-rows"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="xl-tabbar">
+    <div class="xl-tabnav">
+      <div class="xl-tabnav-btn">◀◀</div>
+      <div class="xl-tabnav-btn">◀</div>
+      <div class="xl-tabnav-btn">▶</div>
+      <div class="xl-tabnav-btn">▶▶</div>
+    </div>
+    <div class="xl-tab xl-active">工程状況</div>
+    <div class="xl-tab">生産実績</div>
+    <div class="xl-tab">アラート</div>
+    <div class="xl-tab" style="color:#217346;">＋</div>
+    <div class="xl-statusbar">
+      <span>スナップショット: 13:30 ／ セル色 = 条件付き書式 ／ 進捗 = データバー</span>
+      <span id="stat-avg">平均: 57%</span>
+      <span id="stat-cnt">データの個数: 5</span>
+      <span style="display:flex;gap:4px;align-items:center;">
+        <span>⊞</span><span>📄</span><span>⊟</span>&nbsp;<span>─────</span><span>100%</span>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  PROCESS DEFINITIONS (全16工程)
+// ═══════════════════════════════════════════════
+const ALL_PROCS = [
+  // Work A (P01–P10)
+  {id:'P01', name:'材料投入',   group:'A'},
+  {id:'P02', name:'切断加工',   group:'A'},
+  {id:'P03', name:'穴あけ',     group:'A'},
+  {id:'P04', name:'組付',       group:'A'},
+  {id:'P05', name:'配線',       group:'A'},
+  {id:'P06', name:'表面処理',   group:'A'},
+  {id:'P07', name:'中間検査',   group:'A'},
+  {id:'P08', name:'最終組付',   group:'A'},
+  {id:'P09', name:'最終検査',   group:'A'},
+  {id:'P10', name:'出荷梱包',   group:'A'},
+  // Work B (P11–P15)
+  {id:'P11', name:'素材カット', group:'B'},
+  {id:'P12', name:'加工',       group:'B'},
+  {id:'P13', name:'検査',       group:'B'},
+  {id:'P14', name:'組立',       group:'B'},
+  {id:'P15', name:'出荷',       group:'B'},
+  // Work C (P20)
+  {id:'P20', name:'製造・検査一体', group:'C'},
+];
+
+// ─ state → [cellClass, symbol] ─
+// ※ アニメーションなし: Excelはセルアニメ不可
+const STATE_MAP = {
+  'done':      ['xc-done',      '✓'],
+  'done-late': ['xc-done-late', '✓'],
+  'active':    ['xc-active',    '▶'],
+  'delayed':   ['xc-delayed',   '▲'],
+  'idle':      ['xc-idle',      '—'],
+  'prev':      ['xc-prev',      ''],
+  'n/a':       ['xc-na',        ''],
+};
+
+// ─ Data Bar color per work ─
+const BAR_COLORS = {
+  'wk-a1':'#2056ae', 'wk-a2':'#0891b2',
+  'wk-b':'#375623',  'wk-c1':'#833c00', 'wk-c2':'#8896a8',
+};
+
+// ═══════════════════════════════════════════════
+//  WORK DATA
+// ═══════════════════════════════════════════════
+const WORKS = [
+  {
+    no:1, label:'WORK A #1', nameColor:'#2056ae', product:'製品α', lot:'A-001',
+    accentCls:'wk-a1', badge:'● 進行中', badgeCls:'sb-ok', eta:'16:00', etaNote:'OK',
+    progress:50, section:'ワーク A — 製品α (P01–P10)', showSection:true,
+    // 条件付き書式ルール: セル値="done"→緑, "done-late"→黄, "active"→青, etc.
+    procStates:{
+      P01:'done', P02:'done-late', P03:'done', P04:'done-late', P05:'done-late',
+      P06:'active', P07:'idle', P08:'idle', P09:'idle', P10:'idle',
+    },
+  },
+  {
+    no:2, label:'WORK A #2', nameColor:'#0891b2', product:'製品α', lot:'A-002',
+    accentCls:'wk-a2', badge:'● 進行中', badgeCls:'sb-ok', eta:'14:15', etaNote:'OK',
+    progress:80, section:null, showSection:false, note:'P01–P05: 前シフト完了',
+    procStates:{
+      P01:'prev', P02:'prev', P03:'prev', P04:'prev', P05:'prev',
+      P06:'done', P07:'done', P08:'done-late', P09:'active', P10:'idle',
+    },
+  },
+  {
+    no:3, label:'WORK B #1', nameColor:'#375623', product:'製品β', lot:'B-001',
+    accentCls:'wk-b', badge:'▲ 遅延中', badgeCls:'sb-warn', eta:'14:04', etaNote:'遅延',
+    progress:80, section:'ワーク B — 製品β (P11–P15)', showSection:true,
+    procStates:{
+      P11:'done', P12:'done-late', P13:'done-late', P14:'done-late', P15:'delayed',
+    },
+  },
+  {
+    no:4, label:'WORK C #1', nameColor:'#833c00', product:'製品γ', lot:'C-001',
+    accentCls:'wk-c1', badge:'● 進行中', badgeCls:'sb-ok', eta:'14:00', etaNote:'OK',
+    progress:75, section:'ワーク C — 製品γ (P20)', showSection:true,
+    procStates:{ P20:'active' },
+  },
+  {
+    no:5, label:'WORK C #2', nameColor:'#8896a8', product:'製品γ', lot:'C-002',
+    accentCls:'wk-c2', badge:'◎ 待機中', badgeCls:'sb-idle', eta:'16:00', etaNote:'待機',
+    progress:0, section:null, showSection:false,
+    procStates:{ P20:'idle' },
+  },
+];
+
+// ═══════════════════════════════════════════════
+//  STICKY LEFT CONFIG
+//  rn=0, A=40, B=76, C=172
+// ═══════════════════════════════════════════════
+const SL = [0, 40, 76, 172];
+const SZ = [30, 25, 25, 22];
+
+function sl(el, ci) {
+  el.style.position = 'sticky';
+  el.style.left = SL[ci] + 'px';
+  el.style.zIndex = SZ[ci];
+}
+function slTop(el, ci) {
+  sl(el, ci);
+  el.style.top = '0';
+  el.style.zIndex = SZ[ci] + 10;
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD COLGROUP
+// ═══════════════════════════════════════════════
+function buildColgroup() {
+  const cg = document.createElement('colgroup');
+  // fixed
+  [40, 36, 96, 48].forEach(w => {
+    const c = document.createElement('col'); c.style.width = w+'px'; cg.appendChild(c);
+  });
+  // 16 process cols × 32px
+  ALL_PROCS.forEach(() => {
+    const c = document.createElement('col'); c.style.width = '32px'; cg.appendChild(c);
+  });
+  // 状態, 進捗%, 完了予測
+  [76, 88, 76].forEach(w => {
+    const c = document.createElement('col'); c.style.width = w+'px'; cg.appendChild(c);
+  });
+  document.getElementById('main-table').prepend(cg);
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD HEADER
+// ═══════════════════════════════════════════════
+function buildHeader() {
+  const thead = document.getElementById('thead-row');
+  let rowNum = 1;
+
+  // ── Row 1: Title ──
+  const r1 = document.createElement('tr'); r1.className = 'h-title';
+  const r1rn = th('xl-rn-hdr xl-corner'); slTop(r1rn, 0); r1rn.textContent = rowNum++; r1.appendChild(r1rn);
+  const r1td = th('xl-pad xf-title'); slTop(r1td, 1);
+  r1td.colSpan = 3 + ALL_PROCS.length + 3;
+  r1td.style.fontSize = '13px'; r1td.style.letterSpacing = '.04em';
+  r1td.textContent = '生産管理板 — 工程状況（スナップショット 13:30）';
+  r1.appendChild(r1td); thead.appendChild(r1);
+
+  // ── Row 2: Process group header ──
+  // (P01–P10 = Work A, P11–P15 = Work B, P20 = Work C)
+  const r2 = document.createElement('tr'); r2.className = 'h-hdr2';
+  const r2rn = th('xl-rn-hdr xl-corner'); slTop(r2rn, 0); r2rn.textContent = rowNum++; r2.appendChild(r2rn);
+  ['No.','ワーク / LOT','製品'].forEach((txt, i) => {
+    const c = th('xl-col-hdr'); slTop(c, i+1);
+    if (i === 2) c.classList.add('freeze-border');
+    c.textContent = txt; r2.appendChild(c);
+  });
+  // Process group spans
+  const groups = [
+    { label:'ワークA工程 (P01–P10)', cls:'th-proc-a', count:10 },
+    { label:'ワークB工程 (P11–P15)', cls:'th-proc-b', count:5 },
+    { label:'C (P20)', cls:'th-proc-c', count:1 },
+  ];
+  groups.forEach(g => {
+    const c = th(g.cls); c.colSpan = g.count; c.textContent = g.label; r2.appendChild(c);
+  });
+  // T, U, V headers
+  ['状態','進捗%（データバー）','完了予測'].forEach(txt => {
+    const c = th('xl-col-hdr xl-pad'); c.textContent = txt; r2.appendChild(c);
+  });
+  thead.appendChild(r2);
+
+  // ── Row 3: Column letters / process IDs ──
+  const r3 = document.createElement('tr'); r3.className = 'h-hdr';
+  const r3rn = th('xl-rn-hdr xl-corner'); slTop(r3rn, 0); r3rn.textContent = rowNum++; r3.appendChild(r3rn);
+  const letters = ['A','B','C'];
+  letters.forEach((l, i) => {
+    const c = th('xl-col-hdr'); slTop(c, i+1);
+    if (i === 2) c.classList.add('freeze-border');
+    c.innerHTML = `<span style="font-size:9px;color:#888;">${l}</span>`;
+    r3.appendChild(c);
+  });
+  // Process columns: show ID
+  const procLetters = 'DEFGHIJKLMNOPQRS'.split('');
+  ALL_PROCS.forEach((p, pi) => {
+    const c = th('xl-col-hdr');
+    const grpCls = p.group==='A'?'th-proc-a': p.group==='B'?'th-proc-b':'th-proc-c';
+    c.classList.add(grpCls);
+    c.innerHTML = `<span style="font-size:8px;font-weight:700;">${p.id}</span><br>`
+                + `<span style="font-size:7px;color:#888;overflow:hidden;">${procLetters[pi]||''}</span>`;
+    r3.appendChild(c);
+  });
+  // T, U, V letters
+  ['T','U','V'].forEach(l => {
+    const c = th('xl-col-hdr');
+    c.innerHTML = `<span style="font-size:9px;color:#888;">${l}</span>`;
+    r3.appendChild(c);
+  });
+  thead.appendChild(r3);
+}
+
+function th(cls) {
+  const el = document.createElement('th');
+  if (cls) el.className = cls;
+  return el;
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD ROWS
+// ═══════════════════════════════════════════════
+function buildRows() {
+  const tbody = document.getElementById('tbody-rows');
+  let rowNum = 4;
+
+  WORKS.forEach(work => {
+    // ── Section header ──
+    if (work.showSection && work.section) {
+      const secTr = document.createElement('tr'); secTr.className = 'h-sec';
+      const secRn = td('xl-rn-hdr sticky-l'); sl(secRn, 0);
+      secRn.style.background = '#2e75b6'; secRn.style.borderColor = '#1f4e79';
+      secRn.textContent = rowNum++;
+      secTr.appendChild(secRn);
+      const secTd = td('xl-pad xf-section'); sl(secTd, 1);
+      secTd.colSpan = 3 + ALL_PROCS.length + 3;
+      secTd.textContent = work.section;
+      secTr.appendChild(secTd);
+      tbody.appendChild(secTr);
+    }
+
+    // ── Work row ──
+    const tr = document.createElement('tr'); tr.className = 'h-work';
+
+    // rownum
+    const rn = td('xl-rn-hdr sticky-l'); sl(rn, 0); rn.textContent = rowNum++; tr.appendChild(rn);
+
+    // A: No.
+    const tA = td('xl-pad xl-c xl-bold xf-blank sticky-l'); sl(tA, 1); tA.textContent = work.no; tr.appendChild(tA);
+
+    // B: ワーク
+    const tB = td(`xl-pad xf-blank sticky-l ${work.accentCls}`); sl(tB, 2);
+    tB.innerHTML = `<span style="font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:.04em;color:${work.nameColor};">${work.label}</span><br>`
+      + `<span style="font-size:8px;color:#888;font-family:'Courier New',monospace;">LOT:${work.lot}</span>`
+      + (work.note ? `<br><span style="font-size:8px;color:#bf8f00;font-style:italic;">${work.note}</span>` : '');
+    tr.appendChild(tB);
+
+    // C: 製品 (freeze border)
+    const tC = td('xl-pad xl-c xf-blank sticky-l freeze-border'); sl(tC, 3);
+    tC.style.fontSize = '10px'; tC.textContent = work.product; tr.appendChild(tC);
+
+    // ── Process cells ──
+    // 条件付き書式: セル値 = 状態コード → 塗り色
+    // =IF($cellValue="done", [緑], IF($cellValue="active", [青], ...))
+    ALL_PROCS.forEach(p => {
+      const state = work.procStates[p.id] || 'n/a';
+      const [cls, sym] = STATE_MAP[state];
+      const procTd = td(cls);
+      if (sym) {
+        // セル内テキスト: 状態記号 + ID (Excel セル入力値を再現)
+        procTd.innerHTML = `<div class="proc-cell"><span class="pc-sym">${sym}</span><span class="pc-id">${p.id}</span></div>`;
+      }
+      tr.appendChild(procTd);
+    });
+
+    // T: 状態
+    const tT = td('xl-pad xl-c xf-blank'); tT.innerHTML = `<span class="${work.badgeCls}">${work.badge}</span>`; tr.appendChild(tT);
+
+    // U: 進捗% (データバー — Excel の「条件付き書式 → データバー」相当)
+    const tU = td('xl-databar-cell xf-blank');
+    const barColor = BAR_COLORS[work.accentCls] || '#2056ae';
+    const pct = work.progress;
+    tU.innerHTML = `
+      <div class="xl-databar-fill" style="width:${pct}%;background:${barColor};"></div>
+      <span class="xl-databar-val" style="color:${pct>0?barColor:'#bfbfbf'};">${pct}%</span>`;
+    tr.appendChild(tU);
+
+    // V: 完了予測
+    const tV = td('xl-pad xl-c xf-blank');
+    const etaColor = work.etaNote==='遅延'?'#833c00': work.etaNote==='待機'?'#aaa':'#375623';
+    tV.style.fontSize = '10px';
+    tV.innerHTML = `<span style="font-weight:700;">${work.eta}</span> <span style="font-size:9px;color:${etaColor};">${work.etaNote}</span>`;
+    tr.appendChild(tV);
+
+    tbody.appendChild(tr);
+  });
+
+  // ── Blank separator ──
+  appendBlank(tbody, rowNum++, 3 + ALL_PROCS.length + 3);
+
+  // ── 生産実績 section ──
+  appendSection(tbody, rowNum++, '生産実績', 3 + ALL_PROCS.length + 3);
+
+  // Header
+  const resHdrTr = document.createElement('tr'); resHdrTr.className = 'h-hdr2';
+  const resHdrRn = td('xl-rn-hdr sticky-l'); sl(resHdrRn, 0); resHdrRn.textContent = rowNum++;
+  resHdrTr.appendChild(resHdrRn);
+  [['ワーク','xl-pad xf-sub xl-bold sticky-l',1],
+   ['完了 / 計画','xl-pad xf-hdr xl-c',null],
+   ['完了予測','xl-pad xf-hdr xl-c',null],
+   ['状態','xl-pad xf-hdr xl-c',null],
+  ].forEach(([txt, cls, ci]) => {
+    const c = td(cls); if (ci!==null) sl(c, ci); c.colSpan = ci===1 ? 3 : 5; c.textContent = txt; resHdrTr.appendChild(c);
+  });
+  const resRest = td('xf-blank'); resRest.colSpan = ALL_PROCS.length - 8; resHdrTr.appendChild(resRest);
+  // alert header
+  const alHdr = td('xl-pad xf-hdr xl-bold'); alHdr.colSpan = 5; alHdr.textContent = 'アラートログ'; resHdrTr.appendChild(alHdr);
+  tbody.appendChild(resHdrTr);
+
+  // Data rows
+  const resData = [
+    { name:'ワーク A', nameColor:'#2056ae', frac:'0 / 2', eta:'16:00 / 14:15', status:'● 正常',  stCls:'xc-done',      alert:'13:28  B P15 開始 +4分遅延' },
+    { name:'ワーク B', nameColor:'#375623', frac:'0 / 1', eta:'14:04',          status:'▲ 遅延',   stCls:'xc-done-late', alert:'12:50  B P14 完了 +2分遅延' },
+    { name:'ワーク C', nameColor:'#833c00', frac:'0 / 2', eta:'14:00 / 16:00',  status:'● 正常',  stCls:'xc-done',      alert:'12:00  C #1 P20 定刻開始' },
+  ];
+  resData.forEach(r => {
+    const rtr = document.createElement('tr'); rtr.className = 'h-norm';
+    const rrn = td('xl-rn-hdr sticky-l'); sl(rrn, 0); rrn.textContent = rowNum++;
+    rtr.appendChild(rrn);
+    const rA = td('xl-pad xl-bold sticky-l xf-blank'); sl(rA, 1); rA.colSpan = 3;
+    rA.innerHTML = `<span style="color:${r.nameColor};font-size:10px;">${r.name}</span>`; rtr.appendChild(rA);
+    const rFrac = td('xl-pad xl-c xf-blank xl-bold'); rFrac.colSpan = 5; rFrac.style.fontSize='11px'; rFrac.textContent = r.frac; rtr.appendChild(rFrac);
+    const rEta = td('xl-pad xl-c xf-blank'); rEta.colSpan = 5; rEta.style.fontSize='10px'; rEta.textContent = r.eta; rtr.appendChild(rEta);
+    const rSt = td(`xl-pad xl-c xl-bold ${r.stCls}`); rSt.colSpan = 5; rSt.style.fontSize='10px'; rSt.textContent = r.status; rtr.appendChild(rSt);
+    const rRest = td('xf-blank'); rRest.colSpan = ALL_PROCS.length - 10; rtr.appendChild(rRest);
+    const rAl = td('xl-pad xf-blank'); rAl.colSpan = 5; rAl.style.fontSize='9px'; rAl.style.color='#555'; rAl.textContent = r.alert; rtr.appendChild(rAl);
+    tbody.appendChild(rtr);
+  });
+
+  // ── 不良データ ──
+  appendBlank(tbody, rowNum++, 3 + ALL_PROCS.length + 3);
+  const defTr = document.createElement('tr'); defTr.className = 'h-norm';
+  const defRn = td('xl-rn-hdr sticky-l'); sl(defRn, 0); defRn.textContent = rowNum++;
+  defTr.appendChild(defRn);
+  const defA = td('xl-pad xl-bold xf-subtot sticky-l'); sl(defA, 1); defA.colSpan = 3; defA.textContent = '不良データ'; defTr.appendChild(defA);
+  [['加工不良','0件'],['材料不良','0件']].forEach(([k,v]) => {
+    const dk = td('xl-pad xf-blank'); dk.colSpan=3; dk.style.fontSize='10px'; dk.style.color='#555'; dk.textContent=k; defTr.appendChild(dk);
+    const dv = td('xl-pad xl-bold xf-blank xl-c'); dv.colSpan=4; dv.style.fontSize='12px'; dv.textContent=v; defTr.appendChild(dv);
+  });
+  const defRest = td('xf-blank'); defRest.colSpan = ALL_PROCS.length - 10 + 3; defTr.appendChild(defRest);
+  tbody.appendChild(defTr);
+
+  // ── Blank + 凡例 ──
+  appendBlank(tbody, rowNum++, 3 + ALL_PROCS.length + 3);
+  appendSection(tbody, rowNum++, '凡例（条件付き書式のルール）', 3 + ALL_PROCS.length + 3);
+
+  const legItems = [
+    ['xc-done',      '✓', 'done',      '完了（定刻）',    '=IF($cellValue="done", 緑塗り) — =COUNTIF で集計可'],
+    ['xc-done-late', '✓', 'done-late', '完了（遅延あり）', '=IF($cellValue="done-late", 黄塗り) — ✓は共通、色で判別'],
+    ['xc-active',    '▶', 'active',    '進行中',          '=IF($cellValue="active", 青塗り) — アニメなし・静的'],
+    ['xc-delayed',   '▲', 'delayed',   '遅延進行中',       '=IF($cellValue="delayed", 橙塗り) — アニメなし・静的'],
+    ['xc-idle',      '—', 'idle',      '未着手（計画済）', '=IF($cellValue="idle", 灰塗り)'],
+    ['xc-prev',      '',  'prev',      '前シフト完了',     '前シフトで完了済み — 参照セルとして表示（薄色）'],
+    ['xc-na',        '',  'n/a',       '対象外工程',       '当該ワークに存在しない工程 — 空白（白）'],
+  ];
+
+  legItems.forEach(([cls, sym, val, label, note]) => {
+    const ltr = document.createElement('tr'); ltr.className = 'h-leg';
+    const lrn = td('xl-rn-hdr sticky-l'); sl(lrn, 0); lrn.textContent = rowNum++; ltr.appendChild(lrn);
+    // swatch
+    const sw = td(`${cls} xl-c sticky-l`); sl(sw, 1);
+    sw.innerHTML = `<div class="proc-cell"><span class="pc-sym">${sym}</span><span class="pc-id" style="font-size:7px;">Pxx</span></div>`;
+    ltr.appendChild(sw);
+    // セル値
+    const cv = td('xl-pad xf-blank sticky-l'); sl(cv, 2); cv.colSpan=2;
+    cv.style.fontSize='9px'; cv.style.fontFamily='Courier New,monospace'; cv.style.color='#555';
+    cv.textContent = '"' + val + '"'; ltr.appendChild(cv);
+    // label
+    const lb = td('xl-pad xl-bold xf-blank freeze-border');
+    lb.style.fontSize='10px'; lb.textContent = label; ltr.appendChild(lb);
+    // note
+    const nt = td('xl-pad xf-note'); nt.colSpan = ALL_PROCS.length + 2;
+    nt.textContent = note; ltr.appendChild(nt);
+    tbody.appendChild(ltr);
+  });
+
+  // progress data bar note
+  const pNote = document.createElement('tr'); pNote.className = 'h-leg';
+  const pRn = td('xl-rn-hdr sticky-l'); sl(pRn, 0); pRn.textContent = rowNum++;
+  pNote.appendChild(pRn);
+  const pSw = td('xl-databar-cell xf-blank sticky-l'); sl(pSw, 1);
+  pSw.innerHTML = '<div class="xl-databar-fill" style="width:60%;background:#2056ae;"></div><span class="xl-databar-val" style="color:#2056ae;">60%</span>';
+  pNote.appendChild(pSw);
+  const pLabel = td('xl-pad xl-bold xf-blank sticky-l'); sl(pLabel, 2); pLabel.colSpan=2;
+  pLabel.style.fontSize='10px'; pLabel.textContent = 'データバー'; pNote.appendChild(pLabel);
+  const pFreeze = td('xl-pad xl-bold xf-blank freeze-border');
+  pFreeze.style.fontSize='10px'; pFreeze.textContent = '進捗%'; pNote.appendChild(pFreeze);
+  const pNt = td('xl-pad xf-note'); pNt.colSpan = ALL_PROCS.length + 2;
+  pNt.textContent = '「条件付き書式 → データバー」で適用。数値(%) + 塗りバーを重ねて表示。数式: =(COUNTIF(D行:M行,"done")+COUNTIF(D行:M行,"done-late"))/COUNTA($D$3:$S$3)*100';
+  pNote.appendChild(pNt);
+  tbody.appendChild(pNote);
+
+  // extra blanks
+  for (let i=0; i<3; i++) appendBlank(tbody, rowNum++, 3+ALL_PROCS.length+3);
+}
+
+function td(cls) {
+  const el = document.createElement('td');
+  if (cls) el.className = cls;
+  return el;
+}
+function appendBlank(tbody, rn, span) {
+  const tr = document.createElement('tr'); tr.className='h-norm';
+  const t0 = td('xl-rn-hdr sticky-l'); sl(t0,0); t0.textContent=rn; tr.appendChild(t0);
+  const t1 = td('xf-blank'); t1.colSpan=span; tr.appendChild(t1);
+  tbody.appendChild(tr);
+}
+function appendSection(tbody, rn, label, span) {
+  const tr = document.createElement('tr'); tr.className='h-sec';
+  const t0 = td('xl-rn-hdr sticky-l'); sl(t0,0);
+  t0.style.background='#2e75b6'; t0.style.borderColor='#1f4e79'; t0.textContent=rn; tr.appendChild(t0);
+  const t1 = td('xl-pad xf-section'); sl(t1,1); t1.colSpan=span; t1.textContent=label; tr.appendChild(t1);
+  tbody.appendChild(tr);
+}
+
+buildColgroup();
+buildHeader();
+buildRows();
+</script>
+</body>
+</html>

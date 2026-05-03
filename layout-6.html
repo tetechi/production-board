@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト6 (Excel風 計画/実績)</title>
+  <link rel="stylesheet" href="assets/style-common.css">
+  <link rel="stylesheet" href="assets/style-excel.css">
+  <style>
+    body { margin:0; padding:0; overflow:hidden; background:#f0f0f0; }
+    .xl-sheetarea { overflow: auto; }
+
+    /* ── Main table ── */
+    .xl-tbl {
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .xl-tbl th, .xl-tbl td {
+      border: 1px solid #d0d0d0;
+      padding: 0;
+      font-weight: normal;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .xl-tbl thead th { position: sticky; top: 0; z-index: 20; }
+
+    /* ── Column sizes ── */
+    .col-rn  { width:40px;  min-width:40px; }
+    .col-a   { width:32px;  min-width:32px; }   /* No. */
+    .col-b   { width:100px; min-width:100px; }  /* ワーク */
+    .col-c   { width:22px;  min-width:22px; }   /* 計/実 */
+    .col-d   { width:68px;  min-width:68px; }   /* 状態 */
+    .col-e   { width:62px;  min-width:62px; }   /* 完了予測 */
+    .col-t   { width:32px;  min-width:32px; }   /* time */
+
+    /* ── Sticky helpers ── */
+    .sticky-l { position: sticky; z-index: 12; }
+    .sticky-corner { position: sticky; top:0; z-index: 30; }
+
+    /* Sticky left values:
+       rn=0, A=40, B=72, C=172, D=194, E=262  */
+
+    /* ── Freeze pane border (right of col-e) ── */
+    .freeze-border { border-right: 2px solid #909090 !important; }
+
+    /* ── Header cells ── */
+    .xl-rn-hdr  { background:#f2f2f2; border-color:#c0c0c0 !important; font-size:10px; color:#555; text-align:right; padding-right:4px; }
+    .xl-corner  { background:#f2f2f2; border-color:#c0c0c0 !important; }
+    .xl-col-hdr { background:#f2f2f2; font-size:9px; color:#444; font-weight:700; text-align:center; border-color:#c0c0c0 !important; padding:0 1px; }
+
+    /* ── Row heights ── */
+    .xl-tbl tr.h-title  td { height:26px; }
+    .xl-tbl tr.h-hdr    td { height:26px; }
+    .xl-tbl tr.h-plan   td { height:26px; }   /* plan row */
+    .xl-tbl tr.h-actual td { height:30px; }   /* actual row (slightly taller) */
+    .xl-tbl tr.h-sec    td { height:20px; }
+    .xl-tbl tr.h-leg    td { height:22px; }
+    .xl-tbl tr.h-norm   td { height:22px; }
+
+    /* ── Plan row bottom: dashed (like Excel cell interior border) ── */
+    .xl-tbl tr.h-plan td { border-bottom: 1px dashed #b0c4d8 !important; }
+
+    /* ── Pair separator: thick bottom on actual row ── */
+    .xl-tbl tr.pair-last td { border-bottom: 2px solid #a0a0a0 !important; }
+
+    /* ── 計/実 label cells ── */
+    .sub-plan   { background:#dce6f1; color:#17375e; font-weight:700; font-size:10px; text-align:center !important; }
+    .sub-actual { background:#e2efda; color:#375623; font-weight:700; font-size:10px; text-align:center !important; }
+
+    /* ── Time column headers ── */
+    .th-hour { font-size:9px; font-weight:700; color:#1f3864; background:#dce6f1 !important; border-left:1px solid #9dc3e6 !important; }
+    .th-half { font-size:8px; color:#888; background:#f2f2f2 !important; }
+    .th-now  { background:#c00000 !important; color:#fff !important; font-size:8px; font-weight:700; }
+    .th-ot   { background:#fce4d6 !important; color:#833c00 !important; }
+
+    /* ── Cell borders: hour and NOW columns ── */
+    .td-hour-b { border-left: 1px solid #a0a0a0 !important; }
+    .td-now-b  { border-left: 2px solid #c00000 !important; }
+    .td-ot-bg  { background: #fff8f5 !important; }
+
+    /* ── Plan cell fill (全計画工程を同色で塗る — Excelの単一ルール相当) ── */
+    .xc-plan      { background:#dce6f1; }   /* 計画セル一律 */
+
+    /* ── Actual cell fills (状態ごとに条件付き書式で色分け) ── */
+    .xc-done      { background:#e2efda; }
+    .xc-done-late { background:#fff2cc; }
+    .xc-active    { background:#dce6f1; }   /* 実績：進行中（NOW以前） */
+    .xc-delayed   { background:#fce4d6; }   /* 実績：遅延進行中（NOW以前） */
+
+    /* 残余計画（NOW以降の計画分）— 薄いトーンで表現 */
+    .xc-active-rem  { background:#edf3fc; border-color:#c5d9f1 !important; }
+    .xc-delayed-rem { background:#fef5ef; border-color:#f4c7a8 !important; }
+
+    .xc-empty     { background:#ffffff; }
+
+    /* ── Process label in cell ── */
+    .proc-lbl {
+      display:block; font-size:7.5px; font-weight:700;
+      overflow:hidden; padding:0 2px; line-height:1.2; white-space:nowrap;
+    }
+    .xc-done      .proc-lbl,
+    .xc-plan      .proc-lbl { color:#17375e; }
+    .xc-done-late .proc-lbl { color:#7f6000; }
+    .xc-active    .proc-lbl { color:#17375e; }
+    .xc-delayed   .proc-lbl { color:#833c00; }
+    .xc-active-rem .proc-lbl  { color:#9dc3e6; }
+    .xc-delayed-rem .proc-lbl { color:#f4b183; }
+
+    /* ── Fixed data cells ── */
+    .xl-pad  { padding:2px 4px !important; }
+    .xl-c    { text-align:center !important; }
+    .xl-r    { text-align:right !important; }
+    .xl-bold { font-weight:700 !important; }
+    .xf-title   { background:#1f3864; color:#fff; font-weight:700; }
+    .xf-hdr     { background:#d6dce4; color:#1f3864; font-weight:700; }
+    .xf-section { background:#2e75b6; color:#fff; font-weight:700; }
+    .xf-blank   { background:#fff; }
+    .xf-note    { background:#fffde7; color:#555; font-style:italic; font-size:9px; }
+
+    /* ── Status badges ── */
+    .sb-ok   { color:#375623; font-weight:700; font-size:10px; }
+    .sb-warn { color:#833c00; font-weight:700; font-size:10px; }
+    .sb-idle { color:#aaa;    font-weight:700; font-size:10px; }
+
+    /* Work-color left accent */
+    .wk-a1 { border-left:3px solid #2056ae !important; }
+    .wk-a2 { border-left:3px solid #0891b2 !important; }
+    .wk-b  { border-left:3px solid #375623 !important; }
+    .wk-c1 { border-left:3px solid #833c00 !important; }
+    .wk-c2 { border-left:3px solid #8896a8 !important; }
+  </style>
+</head>
+<body>
+<div class="xl-app">
+
+  <!-- Title bar -->
+  <div class="xl-titlebar">
+    <span class="xl-filename">生産管理板_計画実績比較.xlsx</span>
+    <span class="xl-appname">— Microsoft Excel</span>
+    <div class="xl-winbtns">
+      <div class="xl-winbtn">─</div>
+      <div class="xl-winbtn">□</div>
+      <div class="xl-winbtn xl-close">✕</div>
+    </div>
+  </div>
+
+  <!-- Ribbon -->
+  <div class="xl-ribbon">
+    <div class="xl-ribbon-tabs">
+      <div class="xl-rtab">ファイル</div>
+      <div class="xl-rtab xl-active">ホーム</div>
+      <div class="xl-rtab">挿入</div>
+      <div class="xl-rtab">ページレイアウト</div>
+      <div class="xl-rtab">数式</div>
+      <div class="xl-rtab">データ</div>
+      <div class="xl-rtab">校閲</div>
+      <div class="xl-rtab">表示</div>
+    </div>
+    <div class="xl-ribbon-body">
+      <div class="xl-rgrp" style="flex-direction:row;align-items:center;gap:4px;">
+        <div class="xl-rbtn-paste">
+          <span class="xl-rbtn-icon">📋</span>
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <div class="xl-rbtn-sm" style="font-size:9px;">貼り付け</div>
+            <div class="xl-rbtn-row"><div class="xl-rbtn-sm">✂</div><div class="xl-rbtn-sm">📄</div></div>
+          </div>
+        </div>
+        <div class="xl-rgrp-label" style="align-self:flex-end">クリップボード</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content" style="flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:3px;align-items:center;">
+            <div style="border:1px solid #c0c0c0;padding:1px 5px;font-size:11px;background:#fff;min-width:80px;">Calibri</div>
+            <div style="border:1px solid #c0c0c0;padding:1px 3px;font-size:11px;background:#fff;width:28px;">11</div>
+          </div>
+          <div class="xl-rbtn-row">
+            <div class="xl-rbtn-sm" style="font-weight:900;">B</div>
+            <div class="xl-rbtn-sm" style="font-style:italic;">I</div>
+            <div class="xl-rbtn-sm" style="text-decoration:underline;">U</div>
+            <div class="xl-rbtn-sm">⊞</div>
+            <div class="xl-rbtn-sm">🎨</div>
+          </div>
+        </div>
+        <div class="xl-rgrp-label">フォント</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">📊</span><span class="xl-rbtn-label">条件付き書式</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">🖊</span><span class="xl-rbtn-label">ペイント</span></div>
+        </div>
+        <div class="xl-rgrp-label">スタイル</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">➕</span><span class="xl-rbtn-label">挿入</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">➖</span><span class="xl-rbtn-label">削除</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">⚙</span><span class="xl-rbtn-label">書式</span></div>
+        </div>
+        <div class="xl-rgrp-label">セル</div>
+      </div>
+      <div class="xl-rgrp">
+        <div class="xl-rgrp-content">
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">∑</span><span class="xl-rbtn-label">オートSUM</span></div>
+          <div class="xl-rbtn"><span class="xl-rbtn-icon">🔍</span><span class="xl-rbtn-label">検索</span></div>
+        </div>
+        <div class="xl-rgrp-label">編集</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formula bar
+       計画行: =IF(AND(I$3>=$D4, I$3<$E4), $C4, "")
+       実績行(done): =IF(AND(I$3>=$F5, I$3<$G5), $C4&" ✓", "")
+       実績行(進行中): =IF(AND(I$3>=$F5, I$3<$NOW), "▶"&$C4, "") ← 2ルール目 -->
+  <div class="xl-formulabar">
+    <div class="xl-namebox">I5</div>
+    <div class="xl-fx-icon">fx</div>
+    <div class="xl-fxbar">=IF(AND(I$3&gt;=$F5, I$3&lt;MIN($G5,$NOW)), "▶P06", "")</div>
+  </div>
+
+  <!-- Sheet area -->
+  <div class="xl-sheetarea">
+    <table class="xl-tbl" id="main-table">
+      <thead id="thead-row"></thead>
+      <tbody id="tbody-rows"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="xl-tabbar">
+    <div class="xl-tabnav">
+      <div class="xl-tabnav-btn">◀◀</div>
+      <div class="xl-tabnav-btn">◀</div>
+      <div class="xl-tabnav-btn">▶</div>
+      <div class="xl-tabnav-btn">▶▶</div>
+    </div>
+    <div class="xl-tab xl-active">計画実績比較</div>
+    <div class="xl-tab">ガントチャート</div>
+    <div class="xl-tab">生産実績</div>
+    <div class="xl-tab" style="color:#217346;">＋</div>
+    <div class="xl-statusbar">
+      <span>上段 = 計画（条件付き書式 ルール1）　下段 = 実績（条件付き書式 ルール2）</span>
+      <span>遅延: 1件</span>
+      <span style="display:flex;gap:4px;align-items:center;">
+        <span>⊞</span><span>📄</span><span>⊟</span>&nbsp;<span>─────</span><span>100%</span>
+      </span>
+    </div>
+  </div>
+
+</div><!-- /xl-app -->
+
+<script>
+// ═══════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════
+function toMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+const NOW_TIME = '13:30';
+const NOW_MIN  = toMin(NOW_TIME); // 810
+
+// 30分スロット: 08:00, 08:30, …, 17:30  (20スロット)
+const SLOTS = [];
+for (let h = 8; h < 18; h++) { SLOTS.push(h*60); SLOTS.push(h*60+30); }
+const NOW_SLOT = SLOTS.indexOf(NOW_MIN); // 11
+
+// Sticky left offsets: rn=0, A=40, B=72, C=172, D=194, E=262
+const STICKY_L = [0, 40, 72, 172, 194, 262];
+const CORNER_Z = [30, 25, 25, 25, 25, 25];
+
+// ═══════════════════════════════════════════════
+//  WORK DATA
+// ═══════════════════════════════════════════════
+const WORKS = [
+  {
+    no:1, label:'WORK A #1', product:'製品α', lot:'A-001',
+    accentCls:'wk-a1', nameColor:'#2056ae',
+    badge:'● 正常進行', badgeCls:'sb-ok', eta:'16:00',
+    section:'ワーク A — 製品α (P01–P10)', showSection:true,
+    procs:[
+      { id:'P01', name:'材料投入',  state:'done',      as:'08:00', ae:'08:28', ps:'08:00', pe:'08:30' },
+      { id:'P02', name:'切断加工',  state:'done-late', as:'08:28', ae:'09:32', ps:'08:30', pe:'09:30' },
+      { id:'P03', name:'穴あけ',    state:'done',      as:'09:32', ae:'10:31', ps:'09:30', pe:'10:30' },
+      { id:'P04', name:'組付',      state:'done-late', as:'10:31', ae:'12:02', ps:'10:30', pe:'12:00' },
+      { id:'P05', name:'配線',      state:'done-late', as:'12:02', ae:'12:52', ps:'12:00', pe:'12:50' },
+      { id:'P06', name:'表面処理',  state:'active',    as:'12:52', ae:null,    ps:'12:50', pe:'14:00' },
+      { id:'P07', name:'中間検査',  state:'idle',      as:null,    ae:null,    ps:'14:00', pe:'14:30' },
+      { id:'P08', name:'最終組付',  state:'idle',      as:null,    ae:null,    ps:'14:30', pe:'15:20' },
+      { id:'P09', name:'最終検査',  state:'idle',      as:null,    ae:null,    ps:'15:20', pe:'15:50' },
+      { id:'P10', name:'出荷梱包',  state:'idle',      as:null,    ae:null,    ps:'15:50', pe:'16:00' },
+    ],
+  },
+  {
+    no:2, label:'WORK A #2', product:'製品α', lot:'A-002',
+    accentCls:'wk-a2', nameColor:'#0891b2',
+    badge:'● 正常進行', badgeCls:'sb-ok', eta:'14:15',
+    section:null, showSection:false, note:'P01–P05: 前シフト完了',
+    procs:[
+      { id:'P06', name:'表面処理',  state:'done',      as:'11:30', ae:'12:14', ps:'11:30', pe:'12:15' },
+      { id:'P07', name:'中間検査',  state:'done',      as:'12:14', ae:'12:44', ps:'12:15', pe:'12:45' },
+      { id:'P08', name:'最終組付',  state:'done-late', as:'12:44', ae:'13:26', ps:'12:45', pe:'13:25' },
+      { id:'P09', name:'最終検査',  state:'active',    as:'13:26', ae:null,    ps:'13:25', pe:'13:55' },
+      { id:'P10', name:'出荷梱包',  state:'idle',      as:null,    ae:null,    ps:'13:55', pe:'14:15' },
+    ],
+  },
+  {
+    no:3, label:'WORK B #1', product:'製品β', lot:'B-001',
+    accentCls:'wk-b', nameColor:'#375623',
+    badge:'▲ 遅延中', badgeCls:'sb-warn', eta:'14:04',
+    section:'ワーク B — 製品β (P11–P15)', showSection:true,
+    procs:[
+      { id:'P11', name:'素材カット', state:'done',      as:'11:00', ae:'11:35', ps:'11:00', pe:'11:36' },
+      { id:'P12', name:'加工',       state:'done-late', as:'11:35', ae:'12:15', ps:'11:36', pe:'12:12' },
+      { id:'P13', name:'検査',       state:'done-late', as:'12:15', ae:'12:50', ps:'12:12', pe:'12:48' },
+      { id:'P14', name:'組立',       state:'done-late', as:'12:50', ae:'13:28', ps:'12:48', pe:'13:24' },
+      { id:'P15', name:'出荷',       state:'delayed',   as:'13:28', ae:null,    ps:'13:24', pe:'14:00' },
+    ],
+  },
+  {
+    no:4, label:'WORK C #1', product:'製品γ', lot:'C-001',
+    accentCls:'wk-c1', nameColor:'#833c00',
+    badge:'● 正常進行', badgeCls:'sb-ok', eta:'14:00',
+    section:'ワーク C — 製品γ (P20)', showSection:true,
+    procs:[
+      { id:'P20', name:'製造・検査一体', state:'active', as:'12:00', ae:null, ps:'12:00', pe:'14:00' },
+    ],
+  },
+  {
+    no:5, label:'WORK C #2', product:'製品γ', lot:'C-002',
+    accentCls:'wk-c2', nameColor:'#8896a8',
+    badge:'◎ 待機中', badgeCls:'sb-idle', eta:'16:00',
+    section:null, showSection:false,
+    procs:[
+      { id:'P20', name:'製造・検査一体', state:'idle', as:null, ae:null, ps:'14:00', pe:'16:00' },
+    ],
+  },
+];
+
+// ═══════════════════════════════════════════════
+//  SLOT ASSIGNMENT
+// ═══════════════════════════════════════════════
+
+// 計画行: ps/pe で判定 (ルール1 =AND(G$3>=$PlanStart, G$3<$PlanEnd))
+function getPlanSlot(procs, slotMin) {
+  const slotEnd = slotMin + 30;
+  let best = null, bestOv = 0;
+  for (const p of procs) {
+    const ps = toMin(p.ps), pe = toMin(p.pe);
+    const ov = Math.min(slotEnd, pe) - Math.max(slotMin, ps);
+    if (ov > bestOv) { bestOv = ov; best = p; }
+  }
+  return bestOv > 0 ? best : null;
+}
+
+// 実績行: 2段階判定
+//  ルール2a (優先): as/ae (done系) or as/NOW (active/delayed) で実績塗り
+//  ルール2b (次): active/delayedのNOW以降の計画残余を薄色で塗る
+function getActualSlot(procs, slotMin) {
+  const slotEnd = slotMin + 30;
+  let best = null, bestOv = 0;
+
+  // ── ルール2a: 実績データがあるスロット ──
+  for (const p of procs) {
+    if (!p.as) continue;
+    const as = toMin(p.as);
+    // 進行中は実績終了 = NOW
+    const ae = (p.state === 'active' || p.state === 'delayed')
+               ? NOW_MIN
+               : (p.ae ? toMin(p.ae) : 0);
+    if (!ae) continue;
+    const ov = Math.min(slotEnd, ae) - Math.max(slotMin, as);
+    if (ov > bestOv) { bestOv = ov; best = { proc:p, rem:false }; }
+  }
+  if (bestOv > 0) return best;
+
+  // ── ルール2b: NOW以降の計画残余 (active/delayed のみ) ──
+  if (slotMin >= NOW_MIN) {
+    for (const p of procs) {
+      if (p.state !== 'active' && p.state !== 'delayed') continue;
+      if (!p.as) continue;
+      const as = toMin(p.as), pe = toMin(p.pe);
+      const ov = Math.min(slotEnd, pe) - Math.max(slotMin, as);
+      if (ov > 0) return { proc:p, rem:true };
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD COLGROUP
+// ═══════════════════════════════════════════════
+function buildColgroup() {
+  const cg = document.createElement('colgroup');
+  [40, 32, 100, 22, 68, 62].forEach(w => {
+    const c = document.createElement('col'); c.style.width = w+'px'; cg.appendChild(c);
+  });
+  SLOTS.forEach(() => {
+    const c = document.createElement('col'); c.style.width = '32px'; cg.appendChild(c);
+  });
+  document.getElementById('main-table').prepend(cg);
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD HEADER
+// ═══════════════════════════════════════════════
+function sl(el, ci) {
+  el.style.position = 'sticky';
+  el.style.left = STICKY_L[ci] + 'px';
+  el.style.zIndex = CORNER_Z[ci];
+}
+function slTop(el, ci) {
+  el.style.position = 'sticky';
+  el.style.top = '0';
+  el.style.left = STICKY_L[ci] + 'px';
+  el.style.zIndex = CORNER_Z[ci] + 10; // on top of data cells
+}
+
+function buildHeader() {
+  const thead = document.getElementById('thead-row');
+
+  // ── Row 1: Title ──
+  const r1 = document.createElement('tr'); r1.className = 'h-title';
+  const rn1 = document.createElement('th');
+  rn1.className = 'xl-rn-hdr xl-corner'; slTop(rn1, 0);
+  rn1.textContent = '1'; r1.appendChild(rn1);
+  const td1 = document.createElement('th');
+  td1.colSpan = 5 + SLOTS.length;
+  td1.className = 'xl-pad xf-title';
+  td1.style.fontSize = '13px'; td1.style.letterSpacing = '.04em';
+  slTop(td1, 1);
+  td1.textContent = '生産管理板 — 計画／実績比較（スナップショット 13:30）';
+  r1.appendChild(td1);
+  thead.appendChild(r1);
+
+  // ── Row 2: Column headers ──
+  const r2 = document.createElement('tr'); r2.className = 'h-hdr';
+  const rn2 = document.createElement('th');
+  rn2.className = 'xl-rn-hdr xl-corner'; slTop(rn2, 0);
+  rn2.textContent = '2'; r2.appendChild(rn2);
+
+  const hdrs = ['No.', 'ワーク / LOT', '計/実', '状態', '完了予測'];
+  hdrs.forEach((txt, i) => {
+    const th = document.createElement('th');
+    th.className = 'xl-pad xf-hdr xl-c';
+    slTop(th, i + 1);
+    if (i === 4) th.classList.add('freeze-border');
+    th.textContent = txt;
+    r2.appendChild(th);
+  });
+
+  // time column headers
+  SLOTS.forEach((slotMin, si) => {
+    const th = document.createElement('th');
+    const isHour = slotMin % 60 === 0;
+    const isNow  = si === NOW_SLOT;
+    const isOT   = slotMin >= 17*60;
+    if (isNow) {
+      th.className = 'xl-col-hdr th-now';
+      th.innerHTML = '▶<br>NOW';
+    } else if (isHour && isOT) {
+      th.className = 'xl-col-hdr th-ot th-hour';
+      th.textContent = Math.floor(slotMin/60) + ':00';
+    } else if (isHour) {
+      th.className = 'xl-col-hdr th-hour';
+      th.textContent = Math.floor(slotMin/60) + ':00';
+    } else {
+      th.className = 'xl-col-hdr th-half';
+      th.textContent = ':30';
+    }
+    r2.appendChild(th);
+  });
+  thead.appendChild(r2);
+}
+
+// ═══════════════════════════════════════════════
+//  TIME CELL HELPER
+// ═══════════════════════════════════════════════
+function makeTimeCell(cellClass, proc, isFirst) {
+  const td = document.createElement('td');
+  td.className = cellClass;
+  if (isFirst && proc) {
+    const lbl = document.createElement('span');
+    lbl.className = 'proc-lbl';
+    lbl.textContent = proc.id;
+    td.appendChild(lbl);
+  }
+  return td;
+}
+
+function applyTimeBorder(td, si, slotMin) {
+  if (si === NOW_SLOT)   td.classList.add('td-now-b');
+  else if (slotMin % 60 === 0) td.classList.add('td-hour-b');
+  if (slotMin >= 17*60 && td.className.indexOf('xc-') === -1) td.classList.add('td-ot-bg');
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD ROWS
+// ═══════════════════════════════════════════════
+function buildRows() {
+  const tbody = document.getElementById('tbody-rows');
+  let rowNum = 3;
+
+  WORKS.forEach(work => {
+    // ── Section break ──
+    if (work.showSection && work.section) {
+      const secTr = document.createElement('tr'); secTr.className = 'h-sec';
+      const secRn = document.createElement('td');
+      secRn.className = 'xl-rn-hdr sticky-l'; sl(secRn, 0);
+      secRn.style.background = '#2e75b6'; secRn.style.borderColor = '#1f4e79';
+      secRn.textContent = rowNum++; secTr.appendChild(secRn);
+      const secTd = document.createElement('td');
+      secTd.colSpan = 5 + SLOTS.length; secTd.className = 'xl-pad xf-section';
+      sl(secTd, 1); secTd.textContent = work.section;
+      secTr.appendChild(secTd);
+      tbody.appendChild(secTr);
+    }
+
+    // ════ PLAN ROW ════
+    const planTr = document.createElement('tr'); planTr.className = 'h-plan';
+
+    // rownum
+    const pRn = document.createElement('td');
+    pRn.className = 'xl-rn-hdr sticky-l'; sl(pRn, 0);
+    pRn.textContent = rowNum++; planTr.appendChild(pRn);
+
+    // A: No. (rowspan=2, spans plan+actual rows)
+    const tdA = document.createElement('td');
+    tdA.rowSpan = 2;
+    tdA.className = `xl-pad xl-c xl-bold xf-blank sticky-l`; sl(tdA, 1);
+    tdA.style.verticalAlign = 'middle';
+    tdA.textContent = work.no; planTr.appendChild(tdA);
+
+    // B: ワーク (rowspan=2)
+    const tdB = document.createElement('td');
+    tdB.rowSpan = 2;
+    tdB.className = `xl-pad xf-blank sticky-l ${work.accentCls}`; sl(tdB, 2);
+    tdB.style.verticalAlign = 'middle';
+    tdB.innerHTML =
+      `<span style="font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:.04em;color:${work.nameColor};">${work.label}</span><br>`
+      + `<span style="font-size:8px;color:#888;font-family:'Courier New',monospace;">LOT:${work.lot}</span>`
+      + (work.note ? `<br><span style="font-size:8px;color:#bf8f00;font-style:italic;">${work.note}</span>` : '');
+    planTr.appendChild(tdB);
+
+    // C: 計 label
+    const planC = document.createElement('td');
+    planC.className = 'sub-plan sticky-l xl-c'; sl(planC, 3);
+    planC.textContent = '計'; planTr.appendChild(planC);
+
+    // D: 計画ラベル
+    const planD = document.createElement('td');
+    planD.className = 'xl-pad xf-blank sticky-l'; sl(planD, 4);
+    planD.style.fontSize = '9px'; planD.style.color = '#888';
+    planD.textContent = '計画'; planTr.appendChild(planD);
+
+    // E: 計画完了予定 (freeze border)
+    const planE = document.createElement('td');
+    planE.className = 'xl-pad xl-c xf-blank sticky-l freeze-border'; sl(planE, 5);
+    planE.style.fontSize = '9px'; planE.style.color = '#888';
+    // planned end = last proc's pe
+    const lastProc = work.procs[work.procs.length - 1];
+    planE.textContent = lastProc.pe; planTr.appendChild(planE);
+
+    // Plan time cells
+    let prevPlanProc = null;
+    SLOTS.forEach((slotMin, si) => {
+      const proc = getPlanSlot(work.procs, slotMin);
+      const isFirst = proc && proc !== prevPlanProc;
+      const td = makeTimeCell(proc ? 'xc-plan' : 'xc-empty', proc, isFirst);
+      applyTimeBorder(td, si, slotMin);
+      planTr.appendChild(td);
+      prevPlanProc = proc;
+    });
+    tbody.appendChild(planTr);
+
+    // ════ ACTUAL ROW ════
+    const actTr = document.createElement('tr'); actTr.className = 'h-actual pair-last';
+
+    // rownum
+    const aRn = document.createElement('td');
+    aRn.className = 'xl-rn-hdr sticky-l'; sl(aRn, 0);
+    aRn.textContent = rowNum++; actTr.appendChild(aRn);
+    // (A and B cells omitted — covered by rowspan=2 from plan row)
+
+    // C: 実 label
+    const actC = document.createElement('td');
+    actC.className = 'sub-actual sticky-l xl-c'; sl(actC, 3);
+    actC.textContent = '実'; actTr.appendChild(actC);
+
+    // D: 状態バッジ
+    const actD = document.createElement('td');
+    actD.className = 'xl-pad xf-blank sticky-l'; sl(actD, 4);
+    actD.innerHTML = `<span class="${work.badgeCls}">${work.badge}</span>`;
+    actTr.appendChild(actD);
+
+    // E: 完了予測 (freeze border)
+    const actE = document.createElement('td');
+    actE.className = 'xl-pad xl-c xf-blank sticky-l freeze-border'; sl(actE, 5);
+    actE.style.fontSize = '10px'; actE.style.fontWeight = '700';
+    actE.textContent = work.eta; actTr.appendChild(actE);
+
+    // Actual time cells
+    // 条件付き書式 2ルール:
+    //   ルール1 (高優先): AND(G$3>=$as, G$3<MIN($ae,$NOW)) → 実績色
+    //   ルール2 (低優先): AND(G$3>=$as, G$3<$pe)          → 残余薄色
+    let prevActProc = null;
+    SLOTS.forEach((slotMin, si) => {
+      const result = getActualSlot(work.procs, slotMin);
+      let cellCls, proc;
+      if (result) {
+        proc = result.proc;
+        if (result.rem) {
+          cellCls = proc.state === 'delayed' ? 'xc-delayed-rem' : 'xc-active-rem';
+        } else {
+          const STATE_CLS = {
+            'done':'xc-done','done-late':'xc-done-late',
+            'active':'xc-active','delayed':'xc-delayed',
+          };
+          cellCls = STATE_CLS[proc.state] || 'xc-empty';
+        }
+      } else {
+        cellCls = 'xc-empty';
+        proc = null;
+      }
+      const isFirst = proc && proc !== prevActProc && !result?.rem;
+      const td = makeTimeCell(cellCls, isFirst ? proc : null, isFirst);
+      applyTimeBorder(td, si, slotMin);
+      actTr.appendChild(td);
+      prevActProc = proc;
+    });
+    tbody.appendChild(actTr);
+  });
+
+  // ── Blank row ──
+  appendBlank(tbody, rowNum++, 5 + SLOTS.length);
+
+  // ══ Legend ══
+  const legItems = [
+    { planCls:'xc-plan',       actCls:'xc-done',      planLbl:'計画',         actLbl:'完了（定刻）' },
+    { planCls:'xc-plan',       actCls:'xc-done-late',  planLbl:'計画',         actLbl:'完了（遅延あり）' },
+    { planCls:'xc-plan',       actCls:'xc-active',     planLbl:'計画',         actLbl:'進行中（実績 = NOW まで）' },
+    { planCls:'xc-plan',       actCls:'xc-active-rem', planLbl:'計画',         actLbl:'進行中・残余（NOW 以降）' },
+    { planCls:'xc-plan',       actCls:'xc-delayed',    planLbl:'計画',         actLbl:'遅延進行中（実績 = NOW まで）' },
+    { planCls:'xc-plan',       actCls:'xc-delayed-rem',planLbl:'計画',         actLbl:'遅延・残余（NOW 以降）' },
+    { planCls:'xc-plan',       actCls:'xc-empty',      planLbl:'計画（未着手）', actLbl:'実績なし' },
+  ];
+
+  // legend section header
+  const lhTr = document.createElement('tr'); lhTr.className = 'h-leg';
+  const lhRn = document.createElement('td');
+  lhRn.className = 'xl-rn-hdr sticky-l'; sl(lhRn, 0);
+  lhRn.textContent = rowNum++;
+  lhTr.appendChild(lhRn);
+  const lhTd = document.createElement('td');
+  lhTd.colSpan = 5 + SLOTS.length; lhTd.className = 'xl-pad xf-hdr xl-bold';
+  lhTd.textContent = '凡例（上段 = 計画ルール / 下段 = 実績ルール）';
+  sl(lhTd, 1);
+  lhTr.appendChild(lhTd);
+  tbody.appendChild(lhTr);
+
+  legItems.forEach(leg => {
+    // plan legend row
+    const pTr = document.createElement('tr'); pTr.className = 'h-plan';
+    const pRn = document.createElement('td'); pRn.className = 'xl-rn-hdr sticky-l'; sl(pRn, 0); pRn.textContent = rowNum++;
+    pTr.appendChild(pRn);
+    // swatch A (rowspan=2)
+    const swA = document.createElement('td'); swA.rowSpan = 2; swA.className = `${leg.planCls} xl-c sticky-l`; sl(swA, 1); swA.style.verticalAlign='middle';
+    swA.innerHTML = '<span style="font-size:8px;font-weight:700;color:#17375e;">Pxx</span>'; pTr.appendChild(swA);
+    // B (rowspan=2 label)
+    const swB = document.createElement('td'); swB.rowSpan = 2; swB.className = 'xl-pad xf-blank sticky-l'; sl(swB, 2); swB.style.verticalAlign='middle';
+    swB.style.fontSize = '9px'; swB.style.fontWeight = '700'; swB.style.color = '#1f3864';
+    swB.textContent = '凡例'; pTr.appendChild(swB);
+    // C: 計
+    const pC = document.createElement('td'); pC.className = 'sub-plan sticky-l xl-c'; sl(pC, 3); pC.textContent = '計'; pTr.appendChild(pC);
+    // D+: description
+    const pD = document.createElement('td'); pD.colSpan = 2 + SLOTS.length; pD.className = 'xl-pad xf-note freeze-border'; pD.style.fontSize = '10px'; pD.style.fontStyle = 'normal'; pD.style.color = '#17375e';
+    pD.textContent = leg.planLbl + ' → セル色 #dce6f1（条件付き書式 ルール1: =AND(G$3>=$D行, G$3<$E行)）'; pTr.appendChild(pD);
+    tbody.appendChild(pTr);
+
+    // actual legend row
+    const aTr = document.createElement('tr'); aTr.className = 'h-actual pair-last';
+    const aRn = document.createElement('td'); aRn.className = 'xl-rn-hdr sticky-l'; sl(aRn, 0); aRn.textContent = rowNum++;
+    aTr.appendChild(aRn);
+    const aC = document.createElement('td'); aC.className = 'sub-actual sticky-l xl-c'; sl(aC, 3); aC.textContent = '実'; aTr.appendChild(aC);
+    const aD = document.createElement('td'); aD.colSpan = 2 + SLOTS.length; aD.className = `xl-pad ${leg.actCls} freeze-border`; aD.style.fontSize = '10px'; aD.style.fontStyle = 'normal';
+    aD.innerHTML = `<span class="proc-lbl" style="display:inline;"></span>${leg.actLbl}`; aTr.appendChild(aD);
+    tbody.appendChild(aTr);
+  });
+
+  // extra blanks
+  for (let i = 0; i < 3; i++) appendBlank(tbody, rowNum++, 5 + SLOTS.length);
+}
+
+function appendBlank(tbody, rn, span) {
+  const tr = document.createElement('tr'); tr.className = 'h-norm';
+  const td0 = document.createElement('td'); td0.className = 'xl-rn-hdr sticky-l'; sl(td0, 0); td0.textContent = rn; tr.appendChild(td0);
+  const td1 = document.createElement('td'); td1.colSpan = span; td1.className = 'xf-blank'; tr.appendChild(td1);
+  tbody.appendChild(tr);
+}
+
+buildColgroup();
+buildHeader();
+buildRows();
+</script>
+</body>
+</html>

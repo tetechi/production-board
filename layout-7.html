@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト7</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pb-dark:        #1b1a19;
+      --pb-nav:         #201f1e;
+      --pb-canvas:      #f3f2f1;
+      --pb-white:       #ffffff;
+      --pb-border:      #edebe9;
+      --pb-border2:     #d2d0ce;
+      --pb-text:        #252423;
+      --pb-dim:         #605e5c;
+      --pb-gray:        #8a8886;
+      --pb-hover:       #f3f2f1;
+      --pb-blue:        #0078d4;
+      --pb-blue-lt:     #deecf9;
+      --pb-yellow:      #f2c811;
+      --pb-green:       #107c10;
+      --pb-green-lt:    #dff6dd;
+      --pb-orange:      #ca5010;
+      --pb-orange-lt:   #fdf4ec;
+      --pb-red:         #d13438;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Meiryo', 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      background: var(--pb-dark);
+      color: var(--pb-text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════
+       TOP BAR
+    ══════════════════════════════════ */
+    .pb-topbar {
+      height: 40px; flex: 0 0 40px;
+      background: var(--pb-dark);
+      color: #fff;
+      display: flex; align-items: center;
+      border-bottom: 1px solid #323130;
+    }
+    .pb-logo {
+      width: 48px; height: 40px; flex: 0 0 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--pb-yellow);
+    }
+    .pb-appname {
+      font-size: 13px; font-weight: 600; color: #fff;
+      padding-right: 16px; border-right: 1px solid #323130;
+      margin-right: 12px; line-height: 40px;
+    }
+    .pb-breadcrumb {
+      flex: 1; display: flex; align-items: center;
+      gap: 5px; font-size: 12px; color: rgba(255,255,255,.55);
+    }
+    .pb-breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
+    .pb-breadcrumb a:hover { color: rgba(255,255,255,.85); text-decoration: underline; }
+    .pb-breadcrumb .cur { color: #fff; }
+    .pb-toolbar { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
+    .pb-tbtn {
+      height: 30px; padding: 0 10px;
+      background: transparent; border: none;
+      color: rgba(255,255,255,.75); font-size: 11px;
+      font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      border-radius: 2px; white-space: nowrap;
+    }
+    .pb-tbtn:hover { background: rgba(255,255,255,.1); }
+    .pb-tbtn.highlight { color: var(--pb-yellow); }
+    .pb-tsep { width: 1px; height: 18px; background: #3d3c3b; margin: 0 3px; }
+    .pb-clock {
+      font-size: 11px; color: rgba(255,255,255,.5);
+      padding: 0 14px; white-space: nowrap; border-left: 1px solid #323130;
+    }
+    .pb-clock strong { color: rgba(255,255,255,.8); }
+
+    /* ══════════════════════════════════
+       APP BODY / LEFT NAV
+    ══════════════════════════════════ */
+    .pb-body { flex: 1 1 0; display: flex; overflow: hidden; }
+
+    .pb-nav {
+      width: 48px; flex: 0 0 48px;
+      background: var(--pb-nav);
+      display: flex; flex-direction: column;
+      padding: 4px 0; gap: 1px;
+    }
+    .pb-nicon {
+      width: 48px; min-height: 40px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,.55); font-size: 17px;
+      cursor: pointer; gap: 2px;
+      border-left: 3px solid transparent;
+    }
+    .pb-nicon.active {
+      color: #fff; border-left-color: var(--pb-yellow);
+      background: rgba(255,255,255,.07);
+    }
+    .pb-nicon:hover:not(.active) { background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
+    .pb-nicon .nl { font-size: 8px; line-height: 1; letter-spacing: .01em; }
+    .pb-nav-spacer { flex: 1; }
+
+    /* ══════════════════════════════════
+       CANVAS WRAP / CANVAS
+    ══════════════════════════════════ */
+    .pb-canvas-wrap {
+      flex: 1 1 0; display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+    .pb-canvas {
+      flex: 1 1 0; overflow: hidden;
+      background: var(--pb-canvas);
+      padding: 8px; display: flex;
+      flex-direction: column; gap: 8px;
+    }
+
+    /* ══════════════════════════════════
+       VISUAL CONTAINER (pbv)
+    ══════════════════════════════════ */
+    .pbv {
+      background: var(--pb-white);
+      border-radius: 4px;
+      box-shadow: 0 1.6px 3.6px rgba(0,0,0,.1), 0 0.3px 0.9px rgba(0,0,0,.08);
+      display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+    .pbv:hover > .pbv-hdr .pbv-menu { opacity: 1; }
+    .pbv-hdr {
+      display: flex; align-items: center;
+      padding: 6px 10px 2px; gap: 5px;
+      flex: 0 0 auto; min-height: 28px;
+    }
+    .pbv-title {
+      flex: 1; font-size: 11px; font-weight: 600;
+      color: var(--pb-text); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .pbv-type {
+      font-size: 9px; color: var(--pb-dim);
+      background: var(--pb-hover);
+      border: 1px solid var(--pb-border2);
+      border-radius: 2px; padding: 1px 5px;
+      white-space: nowrap; flex: 0 0 auto;
+    }
+    .pbv-type.custom { background: #fef8ee; color: #7a3800; border-color: #f4c27c; }
+    .pbv-menu {
+      font-size: 13px; color: var(--pb-gray);
+      cursor: pointer; padding: 0 2px;
+      border-radius: 2px; opacity: 0;
+      transition: opacity .15s; line-height: 1; flex: 0 0 auto;
+    }
+    .pbv-menu:hover { background: var(--pb-hover); }
+    .pbv-body { flex: 1 1 0; overflow: hidden; padding: 4px 10px 8px; }
+    .pbv-body.np { padding: 0; }
+    .pbv-body.scrollable { overflow-y: auto; }
+    .pbv-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; pointer-events: none; }
+
+    /* ══════════════════════════════════
+       ROW 1 — KPI CARDS
+    ══════════════════════════════════ */
+    .kpi-row { display: flex; gap: 8px; flex: 0 0 auto; }
+    .pbv-kpi { flex: 1; min-width: 0; }
+    .pbv-kpi .pbv-body {
+      padding: 0 12px 10px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; gap: 1px;
+    }
+    .kv-num { font-size: 30px; font-weight: 300; line-height: 1.1; color: var(--pb-text); }
+    .kv-label { font-size: 10px; color: var(--pb-dim); }
+    .kv-sub { font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+
+    /* ══════════════════════════════════
+       ROW 2 — MAIN ROW
+    ══════════════════════════════════ */
+    .main-row {
+      flex: 1 1 0; display: flex;
+      gap: 8px; min-height: 0; overflow: hidden;
+    }
+
+    /* ── Work area (Multi-row Card) ── */
+    .work-area { flex: 1 1 0; min-width: 0; }
+    .work-area .pbv-body { padding: 0; overflow-y: auto; }
+
+    .mrc-hdr {
+      display: grid;
+      grid-template-columns: 112px 1fr 168px 96px;
+      background: var(--pb-hover);
+      border-bottom: 1px solid var(--pb-border2);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .mrc-hcell {
+      padding: 4px 10px;
+      font-size: 9px; font-weight: 700;
+      color: var(--pb-dim); letter-spacing: .05em;
+      text-transform: uppercase;
+      border-right: 1px solid var(--pb-border);
+    }
+    .mrc-hcell:last-child { border-right: none; }
+
+    .mrc-row {
+      display: grid;
+      grid-template-columns: 112px 1fr 168px 96px;
+      border-bottom: 1px solid var(--pb-border);
+      min-height: 70px; align-items: stretch;
+      transition: background .1s;
+    }
+    .mrc-row:last-child { border-bottom: none; }
+    .mrc-row:hover { background: #faf9f8; }
+
+    .mrc-cell {
+      padding: 8px 10px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 4px;
+      border-right: 1px solid var(--pb-border);
+      font-size: 11px;
+    }
+    .mrc-cell:last-child { border-right: none; }
+
+    .mrc-wname { font-size: 12px; font-weight: 700; line-height: 1.2; }
+    .mrc-wsub  { font-size: 10px; color: var(--pb-dim); }
+    .mrc-wnote { font-size: 9px; color: var(--pb-dim); font-style: italic; }
+
+    .mrc-badge {
+      display: inline-flex; align-items: center;
+      gap: 3px; font-size: 9px; font-weight: 700;
+      padding: 1px 6px; border-radius: 2px; width: fit-content;
+    }
+    .mb-ok   { background: var(--pb-green-lt); color: #054b16; }
+    .mb-warn { background: var(--pb-orange-lt); color: #7a2e0e; }
+    .mb-idle { background: var(--pb-hover); color: var(--pb-dim); border: 1px solid var(--pb-border2); }
+
+    /* ─── Process flow: 均等分散タイムライン ─── */
+    .fd-timeline {
+      position: relative;
+      height: 50px;
+      /* 両端 11px padding = ドットが左右ぴったり収まる */
+      padding: 0 11px;
+      box-sizing: border-box;
+    }
+
+    /* セグメント線（ドット間） */
+    .fd-seg {
+      position: absolute;
+      top: 24px;          /* plan(11) + gap(2) + half-dot(11) = 24px */
+      height: 2px;
+      background: var(--pb-border2);
+      pointer-events: none; z-index: 0;
+    }
+    .fd-seg.done-seg { background: #96c993; }
+
+    /* ノード（絶対配置） */
+    .fd-node {
+      position: absolute;
+      top: 0;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    /* 計画時刻（上） */
+    .fd-t-plan {
+      font-family: 'Courier New', monospace;
+      font-size: 7.5px; color: var(--pb-gray);
+      line-height: 1; height: 11px;
+      text-align: center; white-space: nowrap;
+    }
+
+    /* ドット */
+    .fd-dot {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1.5px solid; flex: 0 0 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7px; font-weight: 700; cursor: default;
+    }
+    .fd-done      { background: var(--pb-green-lt); border-color: #107c10; color: #054b16; }
+    .fd-done-late { background: #fff8c5; border-color: #c8a600; color: #7a5700; }
+    .fd-active    { background: var(--pb-blue-lt);  border-color: var(--pb-blue); color: #004e8c; }
+    .fd-delayed   { background: var(--pb-orange-lt);border-color: var(--pb-orange); color: #7a2e0e; }
+    .fd-idle      { background: var(--pb-hover); border-color: var(--pb-border2); color: var(--pb-gray); }
+    .fd-prev      { background: transparent; border: 1.5px dashed var(--pb-border2); color: var(--pb-border2); }
+
+    /* 実績時刻（下） */
+    .fd-t-actual {
+      font-family: 'Courier New', monospace;
+      font-size: 7.5px; line-height: 1;
+      height: 11px; text-align: center; white-space: nowrap;
+    }
+    .fd-ta-ok   { color: var(--pb-green); }
+    .fd-ta-late { color: #b08000; }
+    .fd-ta-act  { color: var(--pb-blue); }
+    .fd-ta-del  { color: var(--pb-orange); }
+    .fd-ta-none { color: transparent; }
+
+    /* Progress */
+    .mp-proc { font-size: 11px; font-weight: 600; color: var(--pb-text); }
+    .mp-track {
+      height: 8px; background: var(--pb-hover);
+      border-radius: 1px; overflow: hidden; position: relative;
+    }
+    .mp-fill { height: 100%; }
+    .mp-target {
+      position: absolute; top: -2px;
+      width: 2px; height: 12px;
+      background: var(--pb-text);
+      border-radius: 1px; transform: translateX(-50%);
+    }
+    .mp-nums {
+      display: flex; justify-content: space-between;
+      font-size: 9px; color: var(--pb-dim);
+    }
+    .mp-nums strong { color: var(--pb-text); }
+
+    /* ETA */
+    .mrc-eta-time { font-size: 18px; font-weight: 300; color: var(--pb-text); line-height: 1.1; }
+    .mrc-eta-label { font-size: 10px; font-weight: 600; }
+    .eta-ok   { color: var(--pb-green); }
+    .eta-warn { color: var(--pb-orange); }
+    .eta-idle { color: var(--pb-gray); }
+
+    /* ─── Right column ─── */
+    .right-col {
+      width: 210px; flex: 0 0 210px;
+      display: flex; flex-direction: column; gap: 8px;
+      overflow-y: auto;   /* 合計高が溢れてもスクロール */
+    }
+
+    /* Donut chart */
+    .donut-wrap { display: flex; align-items: center; gap: 10px; padding: 2px 0 4px; }
+    .donut-ring {
+      width: 76px; height: 76px;
+      border-radius: 50%; flex: 0 0 76px; position: relative;
+    }
+    .donut-hole {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px; height: 48px;
+      background: var(--pb-white); border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .dh-val { font-size: 15px; font-weight: 600; color: var(--pb-text); line-height: 1; }
+    .dh-lbl { font-size: 8px; color: var(--pb-dim); margin-top: 1px; }
+    .donut-legend { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .dl-row { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+    .dl-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+    .dl-name { color: var(--pb-dim); flex: 1; }
+    .dl-val  { font-weight: 700; color: var(--pb-text); }
+
+    /* ─── 生産実績 visual ─── */
+    .pr-list { display: flex; flex-direction: column; gap: 7px; }
+    .pr-wrow { display: flex; flex-direction: column; gap: 3px; }
+    .pr-head {
+      display: flex; justify-content: space-between;
+      align-items: baseline;
+    }
+    .pr-wname { font-size: 11px; font-weight: 700; color: var(--pb-text); }
+    .pr-frac  { font-size: 10px; color: var(--pb-dim); }
+    .pr-frac-done { font-size: 16px; font-weight: 300; color: var(--pb-text); line-height: 1; }
+    .pr-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pr-chip {
+      display: inline-flex; align-items: center;
+      gap: 3px; font-size: 9px; font-weight: 600;
+      padding: 1px 6px; border-radius: 2px;
+    }
+    .pc-ok   { background: var(--pb-green-lt); color: #054b16; }
+    .pc-warn { background: var(--pb-orange-lt); color: #7a2e0e; }
+    .pc-idle { background: var(--pb-hover); color: var(--pb-dim); border: 1px solid var(--pb-border2); }
+
+    .pr-divider {
+      border: none; border-top: 1px solid var(--pb-border);
+      margin: 4px 0;
+    }
+    .df-row {
+      display: flex; justify-content: space-between;
+      align-items: baseline; font-size: 11px;
+    }
+    .df-label { color: var(--pb-dim); }
+    .df-val {
+      font-size: 18px; font-weight: 300;
+      color: var(--pb-text); line-height: 1;
+    }
+    .df-val.df-ok   { color: var(--pb-green); }
+    .df-val.df-warn { color: var(--pb-orange); }
+    .df-unit { font-size: 10px; color: var(--pb-gray); margin-left: 1px; }
+
+    /* Gauges */
+    .gauge-list { display: flex; flex-direction: column; gap: 8px; }
+    .gi-hdr { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px; }
+    .gi-name { font-weight: 600; color: var(--pb-text); }
+    .gi-pct  { color: var(--pb-dim); font-size: 10px; }
+    .gi-track-wrap { position: relative; margin-bottom: 2px; }
+    .gi-track { height: 6px; background: var(--pb-hover); border-radius: 3px; }
+    .gi-fill  { height: 100%; border-radius: 3px; overflow: hidden; }
+    .gi-target {
+      position: absolute; top: -3px;
+      width: 2px; height: 12px;
+      background: var(--pb-text); border-radius: 1px;
+      transform: translateX(-50%);
+    }
+    .gi-minmax { display: flex; justify-content: space-between; font-size: 8px; color: var(--pb-gray); }
+
+    /* ══════════════════════════════════
+       ROW 3 — BOTTOM
+    ══════════════════════════════════ */
+    .bottom-row { flex: 0 0 auto; display: flex; gap: 8px; }
+
+    /* Slicer */
+    .slicer-visual { width: 136px; flex: 0 0 136px; }
+    .slicer-body { padding: 3px 8px 6px !important; }
+    .sl-item {
+      display: flex; align-items: center;
+      gap: 6px; padding: 3px 4px;
+      border-radius: 2px; cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .sl-item.sel { background: var(--pb-blue-lt); }
+    .sl-item:hover:not(.sel) { background: var(--pb-hover); }
+    .sl-cb {
+      width: 12px; height: 12px; border-radius: 2px;
+      border: 1.5px solid var(--pb-gray);
+      display: flex; align-items: center;
+      justify-content: center; flex: 0 0 12px; font-size: 8px;
+    }
+    .sl-item.sel .sl-cb { background: var(--pb-blue); border-color: var(--pb-blue); color: #fff; }
+    .sl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; }
+    .sl-label { font-size: 11px; color: var(--pb-text); }
+
+    /* Alert table */
+    .alert-visual { flex: 1; }
+    .alert-body { overflow-x: auto !important; }
+    .al-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .al-table th {
+      text-align: left; padding: 3px 8px;
+      background: var(--pb-hover); font-size: 9px;
+      font-weight: 700; color: var(--pb-dim);
+      text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 1px solid var(--pb-border2); white-space: nowrap;
+    }
+    .al-table td { padding: 3px 8px; border-bottom: 1px solid var(--pb-border); vertical-align: middle; }
+    .al-table tr:last-child td { border-bottom: none; }
+    .al-table tr:hover td { background: var(--pb-hover); }
+    .al-time { font-family: 'Courier New', monospace; color: var(--pb-dim); white-space: nowrap; }
+    .al-icon-ok   { color: var(--pb-green); font-size: 11px; }
+    .al-icon-warn { color: var(--pb-orange); font-size: 11px; }
+    .al-work { font-weight: 700; color: var(--pb-text); white-space: nowrap; }
+    .al-msg  { color: var(--pb-dim); }
+
+    /* ══════════════════════════════════
+       STATUS BAR + PAGE TABS
+    ══════════════════════════════════ */
+    .pb-statusbar {
+      flex: 0 0 22px; background: var(--pb-hover);
+      border-top: 1px solid var(--pb-border);
+      display: flex; align-items: center;
+      padding: 0 10px; gap: 14px;
+      font-size: 10px; color: var(--pb-dim);
+    }
+    .pb-statusbar strong { color: var(--pb-text); }
+    .pb-pagetabs {
+      flex: 0 0 30px; background: var(--pb-white);
+      border-top: 1px solid var(--pb-border);
+      display: flex; align-items: stretch;
+      padding: 0 10px; gap: 0;
+    }
+    .pb-ptab {
+      padding: 0 14px; font-size: 11px;
+      color: var(--pb-dim); border-bottom: 2px solid transparent;
+      cursor: pointer; display: flex; align-items: center; white-space: nowrap;
+    }
+    .pb-ptab.active { color: var(--pb-blue); border-bottom-color: var(--pb-blue); font-weight: 600; }
+    .pb-ptab:hover:not(.active) { color: var(--pb-text); background: var(--pb-hover); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--pb-border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--pb-gray); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="pb-topbar">
+  <div class="pb-logo">⚡</div>
+  <div class="pb-appname">Power BI</div>
+  <div class="pb-breadcrumb">
+    <a href="index.html">生産管理</a>
+    <span>›</span>
+    <span class="cur">生産管理板</span>
+    <span style="font-size:9px;color:rgba(255,255,255,.35);background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.15);border-radius:2px;padding:1px 5px;margin-left:4px;">
+      LAYOUT 7
+    </span>
+  </div>
+  <div style="flex:1"></div>
+  <div class="pb-toolbar">
+    <button class="pb-tbtn">📤 共有</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn">✏ 編集</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn">⚙ 設定</button>
+    <div class="pb-tsep"></div>
+    <button class="pb-tbtn highlight">✦ Q&amp;A</button>
+  </div>
+  <div class="pb-clock">最終更新: <strong id="clock">--:--</strong></div>
+</div>
+
+<!-- ═══════════ BODY ═══════════ -->
+<div class="pb-body">
+
+  <!-- Left nav -->
+  <div class="pb-nav">
+    <div class="pb-nicon active" title="ホーム"><span>⊞</span><span class="nl">ホーム</span></div>
+    <div class="pb-nicon" title="お気に入り"><span>☆</span><span class="nl">お気に入り</span></div>
+    <div class="pb-nicon" title="最近"><span>🕐</span><span class="nl">最近</span></div>
+    <div class="pb-nicon" title="アプリ"><span>⬡</span><span class="nl">アプリ</span></div>
+    <div class="pb-nicon" title="ワークスペース"><span>⊟</span><span class="nl">作業</span></div>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nicon" title="ヘルプ"><span style="font-size:14px;font-weight:700">?</span><span class="nl">ヘルプ</span></div>
+  </div>
+
+  <!-- Canvas wrap -->
+  <div class="pb-canvas-wrap">
+    <div class="pb-canvas">
+
+      <!-- ════ ROW 1 — KPI Cards ════ -->
+      <div class="kpi-row">
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">本日計画</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body"><div class="kv-num">5</div><div class="kv-label">台 / 第1ライン</div></div>
+          <div class="pbv-accent" style="background:var(--pb-blue)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">進行中</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-blue)">4</div>
+            <div class="kv-label">ワーク</div>
+            <div class="kv-sub" style="color:var(--pb-blue)">▲ 計画通り</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-blue)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">遅延</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-orange)">1</div>
+            <div class="kv-label">ワーク B</div>
+            <div class="kv-sub" style="color:var(--pb-orange)">▲ +4分遅延</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-orange)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">完成済</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-gray)">0</div>
+            <div class="kv-label">台（目標 5台）</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-border2)"></div>
+        </div>
+
+        <div class="pbv pbv-kpi">
+          <div class="pbv-hdr"><div class="pbv-title">待機</div><span class="pbv-type">Card</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body">
+            <div class="kv-num" style="color:var(--pb-gray)">1</div>
+            <div class="kv-label">ワーク C #2</div>
+            <div class="kv-sub" style="color:var(--pb-gray)">◎ 14:00 開始予定</div>
+          </div>
+          <div class="pbv-accent" style="background:var(--pb-border2)"></div>
+        </div>
+
+      </div><!-- /kpi-row -->
+
+      <!-- ════ ROW 2 — MAIN ════ -->
+      <div class="main-row">
+
+        <!-- Work status (Multi-row Card) -->
+        <div class="pbv work-area">
+          <div class="pbv-hdr">
+            <div class="pbv-title">ワーク状況 — Multi-row Card</div>
+            <span class="pbv-type custom">カスタムビジュアル含む</span>
+            <div class="pbv-menu">···</div>
+          </div>
+          <div class="pbv-body np scrollable">
+            <div class="mrc-hdr">
+              <div class="mrc-hcell">ワーク</div>
+              <div class="mrc-hcell">工程フロー — Process Flow Visual (AppSource) ｜ 上: 計画時刻 / 下: 実績時刻</div>
+              <div class="mrc-hcell">現在工程 / 進捗</div>
+              <div class="mrc-hcell">完了予測</div>
+            </div>
+            <div id="work-table"></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="right-col">
+
+          <!-- 1. Donut chart -->
+          <div class="pbv" style="flex:0 0 130px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">ステータス分布</div>
+              <span class="pbv-type">Donut Chart</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body">
+              <div class="donut-wrap">
+                <!-- 正常3/遅延1/待機1 → 216°/72°/72° -->
+                <div class="donut-ring" style="background: conic-gradient(
+                  var(--pb-blue)   0deg 216deg,
+                  var(--pb-orange) 216deg 288deg,
+                  var(--pb-gray)   288deg 360deg
+                );">
+                  <div class="donut-hole">
+                    <div class="dh-val">5</div>
+                    <div class="dh-lbl">ワーク</div>
+                  </div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-blue)"></div><span class="dl-name">正常進行</span><span class="dl-val">3</span></div>
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-orange)"></div><span class="dl-name">遅延中</span><span class="dl-val">1</span></div>
+                  <div class="dl-row"><div class="dl-dot" style="background:var(--pb-gray)"></div><span class="dl-name">待機</span><span class="dl-val">1</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. 生産実績 (Multi-row Card) -->
+          <div class="pbv" style="flex:0 0 200px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">生産実績</div>
+              <span class="pbv-type">Multi-row Card</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body" style="padding:4px 10px 8px">
+              <div class="pr-list">
+                <!-- WORK A -->
+                <div class="pr-wrow">
+                  <div class="pr-head">
+                    <span class="pr-wname">ワーク <span style="color:var(--pb-blue)">A</span></span>
+                    <span class="pr-frac"><span class="pr-frac-done">0</span> / 2 台</span>
+                  </div>
+                  <div class="pr-chips">
+                    <span class="pr-chip pc-ok" title="A#1 — P06進行中">A1 進行中</span>
+                    <span class="pr-chip pc-ok" title="A#2 — P09進行中">A2 進行中</span>
+                  </div>
+                </div>
+                <!-- WORK B -->
+                <div class="pr-wrow">
+                  <div class="pr-head">
+                    <span class="pr-wname">ワーク <span style="color:var(--pb-green)">B</span></span>
+                    <span class="pr-frac"><span class="pr-frac-done">0</span> / 1 台</span>
+                  </div>
+                  <div class="pr-chips">
+                    <span class="pr-chip pc-warn" title="B — P15遅延進行中">B &nbsp;遅延中</span>
+                  </div>
+                </div>
+                <!-- WORK C -->
+                <div class="pr-wrow">
+                  <div class="pr-head">
+                    <span class="pr-wname">ワーク <span style="color:var(--pb-orange)">C</span></span>
+                    <span class="pr-frac"><span class="pr-frac-done">0</span> / 2 台</span>
+                  </div>
+                  <div class="pr-chips">
+                    <span class="pr-chip pc-ok"   title="C#1 — P20進行中">C1 進行中</span>
+                    <span class="pr-chip pc-idle" title="C#2 — 14:00開始待ち">C2 待機</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 不良数 -->
+              <hr class="pr-divider">
+              <div class="df-row">
+                <span class="df-label">加工不良</span>
+                <span><span class="df-val df-ok">0</span><span class="df-unit">件</span></span>
+              </div>
+              <div class="df-row" style="margin-top:4px">
+                <span class="df-label">材料不良</span>
+                <span><span class="df-val df-ok">0</span><span class="df-unit">件</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Gauge visual -->
+          <div class="pbv" style="flex:1 1 0;min-height:110px">
+            <div class="pbv-hdr">
+              <div class="pbv-title">工程進捗</div>
+              <span class="pbv-type">Gauge</span>
+              <div class="pbv-menu">···</div>
+            </div>
+            <div class="pbv-body scrollable" style="padding:4px 10px 8px">
+              <div class="gauge-list" id="gauge-list"></div>
+            </div>
+          </div>
+
+        </div><!-- /right-col -->
+      </div><!-- /main-row -->
+
+      <!-- ════ ROW 3 — BOTTOM ════ -->
+      <div class="bottom-row">
+
+        <!-- Slicer -->
+        <div class="pbv slicer-visual">
+          <div class="pbv-hdr"><div class="pbv-title">製品フィルター</div><span class="pbv-type">Slicer</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body slicer-body">
+            <div class="sl-item sel">
+              <div class="sl-cb">✓</div>
+              <div class="sl-dot" style="background:var(--pb-blue)"></div>
+              <span class="sl-label">製品α (WORK A)</span>
+            </div>
+            <div class="sl-item sel">
+              <div class="sl-cb">✓</div>
+              <div class="sl-dot" style="background:var(--pb-green)"></div>
+              <span class="sl-label">製品β (WORK B)</span>
+            </div>
+            <div class="sl-item sel">
+              <div class="sl-cb">✓</div>
+              <div class="sl-dot" style="background:var(--pb-orange)"></div>
+              <span class="sl-label">製品γ (WORK C)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert log (Table) -->
+        <div class="pbv alert-visual">
+          <div class="pbv-hdr"><div class="pbv-title">アラートログ</div><span class="pbv-type">Table</span><div class="pbv-menu">···</div></div>
+          <div class="pbv-body np alert-body">
+            <table class="al-table">
+              <thead>
+                <tr>
+                  <th>時刻</th><th style="width:20px"></th>
+                  <th>ワーク</th><th>メッセージ</th><th>種別</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="al-time">13:28</td><td class="al-icon-warn">⚠</td>
+                  <td class="al-work">WORK B</td>
+                  <td class="al-msg">P15 出荷 開始（+4分遅延）</td>
+                  <td><span class="mrc-badge mb-warn">遅延</span></td>
+                </tr>
+                <tr>
+                  <td class="al-time">12:50</td><td class="al-icon-warn">⚠</td>
+                  <td class="al-work">WORK B</td>
+                  <td class="al-msg">P14 組立 完了（+2分遅延）</td>
+                  <td><span class="mrc-badge mb-warn">遅延</span></td>
+                </tr>
+                <tr>
+                  <td class="al-time">12:00</td><td class="al-icon-ok">✓</td>
+                  <td class="al-work">WORK C #1</td>
+                  <td class="al-msg">P20 製造・検査 定刻開始</td>
+                  <td><span class="mrc-badge mb-ok">正常</span></td>
+                </tr>
+                <tr>
+                  <td class="al-time">08:00</td><td class="al-icon-ok">✓</td>
+                  <td class="al-work">全ライン</td>
+                  <td class="al-msg">始業確認 OK</td>
+                  <td><span class="mrc-badge mb-ok">正常</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /bottom-row -->
+    </div><!-- /pb-canvas -->
+
+    <!-- Status bar -->
+    <div class="pb-statusbar">
+      <span>データセット: <strong>生産管理_DS</strong></span>
+      <span>更新頻度: <strong>5分毎</strong></span>
+      <span>行数: <strong>5</strong></span>
+      <div style="flex:1"></div>
+      <span>フィルター: <strong>なし</strong></span>
+      <span>ページ <strong>1 / 1</strong></span>
+    </div>
+
+    <!-- Page tabs -->
+    <div class="pb-pagetabs">
+      <div class="pb-ptab active">概要ダッシュボード</div>
+      <div class="pb-ptab">工程詳細</div>
+      <div class="pb-ptab">アラート履歴</div>
+    </div>
+
+  </div><!-- /pb-canvas-wrap -->
+</div><!-- /pb-body -->
+
+<script>
+// ── Clock ──
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// ── Work data (plan/actual times added per process) ──
+const WORKS = [
+  {
+    label:'WORK A #1', sub:'製品α / LOT:A-001', color:'#0078d4',
+    status:'ok', statusLabel:'正常進行',
+    procs:[
+      {id:'01', name:'材料投入',  s:'done',      plan:'08:00', actual:'08:00'},
+      {id:'02', name:'切断加工',  s:'done-late', plan:'08:30', actual:'08:28'},
+      {id:'03', name:'穴あけ',    s:'done',      plan:'09:30', actual:'09:32'},
+      {id:'04', name:'組付',      s:'done-late', plan:'10:30', actual:'10:31'},
+      {id:'05', name:'配線',      s:'done-late', plan:'12:00', actual:'12:02'},
+      {id:'06', name:'表面処理',  s:'active',    plan:'12:50', actual:'12:52'},
+      {id:'07', name:'中間検査',  s:'idle',      plan:'14:00', actual:''},
+      {id:'08', name:'最終組付',  s:'idle',      plan:'14:30', actual:''},
+      {id:'09', name:'最終検査',  s:'idle',      plan:'15:20', actual:''},
+      {id:'10', name:'出荷梱包',  s:'idle',      plan:'15:50', actual:''},
+    ],
+    curProc:'P06 — 表面処理', pct:50, planPct:57,
+    eta:'16:00', etaStatus:'ok', etaLabel:'定時内', barColor:'var(--pb-blue)',
+  },
+  {
+    label:'WORK A #2', sub:'製品α / LOT:A-002', color:'#2196f3',
+    status:'ok', statusLabel:'正常進行', note:'P01-05 前シフト完了',
+    procs:[
+      {id:'01', name:'材料投入',  s:'prev', plan:'前S', actual:''},
+      {id:'02', name:'切断加工',  s:'prev', plan:'前S', actual:''},
+      {id:'03', name:'穴あけ',    s:'prev', plan:'前S', actual:''},
+      {id:'04', name:'組付',      s:'prev', plan:'前S', actual:''},
+      {id:'05', name:'配線',      s:'prev', plan:'前S', actual:''},
+      {id:'06', name:'表面処理',  s:'done',      plan:'11:30', actual:'11:30'},
+      {id:'07', name:'中間検査',  s:'done',      plan:'12:15', actual:'12:14'},
+      {id:'08', name:'最終組付',  s:'done-late', plan:'12:45', actual:'12:44'},
+      {id:'09', name:'最終検査',  s:'active',    plan:'13:25', actual:'13:26'},
+      {id:'10', name:'出荷梱包',  s:'idle',      plan:'13:55', actual:''},
+    ],
+    curProc:'P09 — 最終検査', pct:60, planPct:60,
+    eta:'14:15', etaStatus:'ok', etaLabel:'定時内', barColor:'var(--pb-blue)',
+  },
+  {
+    label:'WORK B', sub:'製品β / LOT:B-001', color:'#107c10',
+    status:'warn', statusLabel:'遅延中',
+    procs:[
+      {id:'11', name:'素材カット', s:'done',      plan:'11:00', actual:'11:00'},
+      {id:'12', name:'加工',       s:'done-late', plan:'11:36', actual:'11:35'},
+      {id:'13', name:'検査',       s:'done-late', plan:'12:12', actual:'12:15'},
+      {id:'14', name:'組立',       s:'done-late', plan:'12:48', actual:'12:50'},
+      {id:'15', name:'出荷',       s:'delayed',   plan:'13:24', actual:'13:28'},
+    ],
+    curProc:'P15 — 出荷', pct:80, planPct:80,
+    eta:'14:04', etaStatus:'warn', etaLabel:'+4分遅延', barColor:'var(--pb-orange)',
+  },
+  {
+    label:'WORK C #1', sub:'製品γ / LOT:C-001', color:'#ca5010',
+    status:'ok', statusLabel:'正常進行',
+    procs:[
+      {id:'20', name:'製造・検査', s:'active', plan:'12:00', actual:'12:00'},
+    ],
+    curProc:'P20 — 製造・検査一体', pct:75, planPct:75,
+    eta:'14:00', etaStatus:'ok', etaLabel:'定時内', barColor:'var(--pb-orange)',
+  },
+  {
+    label:'WORK C #2', sub:'製品γ / LOT:C-002', color:'#8a8886',
+    status:'idle', statusLabel:'待機中',
+    procs:[
+      {id:'20', name:'製造・検査', s:'idle', plan:'14:00', actual:''},
+    ],
+    curProc:'P20 — 製造・検査一体', pct:0, planPct:0,
+    eta:'16:00', etaStatus:'idle', etaLabel:'14:00 開始予定', barColor:'var(--pb-gray)',
+  },
+];
+
+const DOT_CLS = {
+  'done':'fd-done', 'done-late':'fd-done-late',
+  'active':'fd-active', 'delayed':'fd-delayed',
+  'idle':'fd-idle', 'prev':'fd-prev',
+};
+// 実績時刻の文字色クラス
+const ACT_CLS = {
+  'done':'fd-ta-ok', 'done-late':'fd-ta-late',
+  'active':'fd-ta-act', 'delayed':'fd-ta-del',
+  'idle':'fd-ta-none', 'prev':'fd-ta-none',
+};
+const BADGE_CLS  = {ok:'mb-ok', warn:'mb-warn', idle:'mb-idle'};
+const BADGE_ICON = {ok:'●', warn:'▲', idle:'◎'};
+const ETA_CLS    = {ok:'eta-ok', warn:'eta-warn', idle:'eta-idle'};
+
+// ── Build work table ──
+const tbl = document.getElementById('work-table');
+WORKS.forEach(w => {
+  const row = document.createElement('div');
+  row.className = 'mrc-row';
+
+  // Col 1: Work name + status
+  const c1 = document.createElement('div');
+  c1.className = 'mrc-cell';
+  c1.innerHTML =
+    `<div class="mrc-wname" style="color:${w.color}">${w.label}</div>` +
+    `<div class="mrc-wsub">${w.sub}</div>` +
+    (w.note ? `<div class="mrc-wnote">${w.note}</div>` : '') +
+    `<span class="mrc-badge ${BADGE_CLS[w.status]}">${BADGE_ICON[w.status]} ${w.statusLabel}</span>`;
+
+  // Col 2: Process flow — 均等分散タイムライン
+  const c2 = document.createElement('div');
+  c2.className = 'mrc-cell';
+  const fd = document.createElement('div');
+  fd.className = 'fd-timeline';
+
+  const N = w.procs.length;
+  // N=1 のとき左端寄り(10%)に配置
+  const posPct = idx => N === 1 ? 10 : (idx / (N - 1)) * 100;
+
+  const STATE_LBL2 = {
+    done:'完了', 'done-late':'完了(遅延)',
+    active:'進行中', delayed:'遅延進行中',
+    idle:'未着手', prev:'前シフト完了'
+  };
+
+  // ① セグメント線（ドット間）
+  for (let i = 0; i < N - 1; i++) {
+    const ps = w.procs[i].s;
+    const isDone = ps === 'done' || ps === 'done-late' || ps === 'prev';
+    const seg = document.createElement('div');
+    seg.className = 'fd-seg' + (isDone ? ' done-seg' : '');
+    seg.style.left  = posPct(i) + '%';
+    seg.style.width = (posPct(i + 1) - posPct(i)) + '%';
+    fd.appendChild(seg);
+  }
+
+  // ② ノード（計画時刻 / ドット / 実績時刻）
+  w.procs.forEach((p, i) => {
+    const node = document.createElement('div');
+    node.className = 'fd-node';
+    node.style.left = posPct(i) + '%';
+
+    const tPlan = document.createElement('div');
+    tPlan.className = 'fd-t-plan';
+    tPlan.textContent = p.plan || '';
+
+    const dot = document.createElement('div');
+    dot.className = 'fd-dot ' + (DOT_CLS[p.s] || 'fd-idle');
+    dot.textContent = p.id;
+    dot.title = `P${p.id} ${p.name} | ${STATE_LBL2[p.s] || p.s}` +
+      (p.plan && p.s !== 'prev' ? ` | 計画: ${p.plan}` : '') +
+      (p.actual ? ` | 実績: ${p.actual}` : '');
+
+    const tAct = document.createElement('div');
+    tAct.className = 'fd-t-actual ' + (ACT_CLS[p.s] || 'fd-ta-none');
+    tAct.textContent = p.actual || ' ';
+
+    node.appendChild(tPlan);
+    node.appendChild(dot);
+    node.appendChild(tAct);
+    fd.appendChild(node);
+  });
+
+  c2.appendChild(fd);
+
+  // Col 3: Current proc + progress bar
+  const c3 = document.createElement('div');
+  c3.className = 'mrc-cell';
+  c3.innerHTML =
+    `<div class="mp-proc">${w.curProc}</div>` +
+    `<div class="mp-track">` +
+      `<div class="mp-fill" style="width:${w.pct}%;background:${w.barColor}"></div>` +
+      (w.planPct > 0 ? `<div class="mp-target" style="left:${w.planPct}%"></div>` : '') +
+    `</div>` +
+    `<div class="mp-nums"><span><strong>${w.pct}%</strong> 実績</span><span>計画 ${w.planPct}%</span></div>`;
+
+  // Col 4: ETA
+  const c4 = document.createElement('div');
+  c4.className = 'mrc-cell';
+  c4.innerHTML =
+    `<div class="mrc-eta-time">${w.eta}</div>` +
+    `<div class="mrc-eta-label ${ETA_CLS[w.etaStatus]}">${w.etaLabel}</div>`;
+
+  row.appendChild(c1); row.appendChild(c2);
+  row.appendChild(c3); row.appendChild(c4);
+  tbl.appendChild(row);
+});
+
+// ── Build gauge list ──
+const GAUGES = [
+  { name:'A #1', pct:50, target:57, color:'var(--pb-blue)' },
+  { name:'A #2', pct:60, target:60, color:'var(--pb-blue)' },
+  { name:'B',    pct:80, target:80, color:'var(--pb-orange)' },
+  { name:'C #1', pct:75, target:75, color:'var(--pb-orange)' },
+  { name:'C #2', pct:0,  target:0,  color:'var(--pb-gray)' },
+];
+const gl = document.getElementById('gauge-list');
+GAUGES.forEach(g => {
+  const item = document.createElement('div');
+  item.innerHTML =
+    `<div class="gi-hdr"><span class="gi-name">${g.name}</span><span class="gi-pct">${g.pct}%</span></div>` +
+    `<div class="gi-track-wrap">` +
+      `<div class="gi-track"><div class="gi-fill" style="width:${g.pct}%;background:${g.color}"></div></div>` +
+      (g.target > 0 ? `<div class="gi-target" style="left:${g.target}%"></div>` : '') +
+    `</div>` +
+    `<div class="gi-minmax"><span>0</span><span>100%</span></div>`;
+  gl.appendChild(item);
+});
+</script>
+</body>
+</html>

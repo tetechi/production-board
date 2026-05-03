@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト10</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gf-bg:       #111217;
+      --gf-panel:    #181b1f;
+      --gf-panel2:   #1f2128;
+      --gf-border:   #2d3139;
+      --gf-border2:  #3d4251;
+      --gf-text:     #d8d9da;
+      --gf-dim:      #8e9099;
+      --gf-muted:    #545964;
+      --gf-blue:     #5794f2;
+      --gf-cyan:     #37872d;
+      --gf-green:    #73bf69;
+      --gf-yellow:   #fade2a;
+      --gf-orange:   #ff9830;
+      --gf-red:      #f2495c;
+      --gf-purple:   #b877d9;
+      --gf-teal:     #4ed8d8;
+      --gf-orange2:  #ff780a;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', 'Segoe UI', 'Meiryo', 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      background: var(--gf-bg);
+      color: var(--gf-text);
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════
+       TOP NAV BAR
+    ══════════════════════════════════ */
+    .gf-topbar {
+      height: 40px; flex: 0 0 40px;
+      background: var(--gf-panel);
+      border-bottom: 1px solid var(--gf-border);
+      display: flex; align-items: center;
+      padding: 0 8px; gap: 0;
+    }
+    .gf-logo {
+      display: flex; align-items: center;
+      gap: 6px; padding: 0 12px 0 4px;
+      border-right: 1px solid var(--gf-border);
+      margin-right: 8px;
+    }
+    .gf-logo-icon {
+      width: 26px; height: 26px;
+      background: linear-gradient(135deg, var(--gf-orange2), var(--gf-yellow));
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; flex: 0 0 26px;
+    }
+    .gf-logo-text { font-size: 14px; font-weight: 700; color: var(--gf-text); letter-spacing: -.3px; }
+
+    .gf-nav { display: flex; align-items: center; gap: 1px; flex: 1; }
+    .gf-navbtn {
+      height: 32px; padding: 0 10px;
+      background: transparent; border: none;
+      color: var(--gf-dim); font-size: 12px;
+      font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      border-radius: 3px; white-space: nowrap;
+    }
+    .gf-navbtn:hover { background: rgba(255,255,255,.07); color: var(--gf-text); }
+    .gf-navbtn.active { background: rgba(255,255,255,.1); color: var(--gf-text); }
+
+    .gf-searchbar {
+      flex: 0 0 240px; height: 30px;
+      background: var(--gf-panel2); border: 1px solid var(--gf-border);
+      border-radius: 3px; display: flex; align-items: center;
+      padding: 0 8px; gap: 5px; color: var(--gf-muted);
+      font-size: 12px; cursor: text; margin: 0 6px;
+    }
+
+    .gf-topright {
+      display: flex; align-items: center; gap: 4px;
+      padding-left: 8px; border-left: 1px solid var(--gf-border);
+    }
+    .gf-tbtn {
+      width: 32px; height: 32px; border-radius: 3px;
+      background: transparent; border: none;
+      color: var(--gf-dim); font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gf-tbtn:hover { background: rgba(255,255,255,.07); color: var(--gf-text); }
+
+    /* ══════════════════════════════════
+       DASHBOARD HEADER
+    ══════════════════════════════════ */
+    .gf-dbhdr {
+      height: 44px; flex: 0 0 44px;
+      background: var(--gf-panel);
+      border-bottom: 1px solid var(--gf-border);
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 8px;
+    }
+    .gf-dbhdr-star { color: var(--gf-muted); font-size: 16px; cursor: pointer; }
+    .gf-dbhdr-star:hover { color: var(--gf-yellow); }
+    .gf-dbtitle {
+      font-size: 18px; font-weight: 500; color: var(--gf-text);
+      flex: 1;
+    }
+    .gf-dbtag {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 2px;
+      background: rgba(87,148,242,.15); color: var(--gf-blue);
+      border: 1px solid rgba(87,148,242,.3);
+      letter-spacing: .04em; white-space: nowrap;
+    }
+    .gf-dbtag.warn { background: rgba(255,152,48,.15); color: var(--gf-orange); border-color: rgba(255,152,48,.3); }
+    .gf-dbtime {
+      font-size: 11px; color: var(--gf-dim);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .gf-dbtime strong { color: var(--gf-text); font-family: 'Courier New', monospace; }
+    .gf-dbctrl {
+      height: 28px; padding: 0 10px;
+      background: var(--gf-panel2); border: 1px solid var(--gf-border);
+      border-radius: 3px; color: var(--gf-dim); font-size: 11px;
+      font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .gf-dbctrl:hover { border-color: var(--gf-border2); color: var(--gf-text); }
+    .gf-dbctrl.blue { border-color: rgba(87,148,242,.5); color: var(--gf-blue); background: rgba(87,148,242,.08); }
+
+    /* ══════════════════════════════════
+       MAIN LAYOUT
+    ══════════════════════════════════ */
+    .gf-main {
+      display: flex; flex-direction: column;
+      height: calc(100vh - 40px - 44px);
+      overflow-y: auto; padding: 8px;
+      gap: 8px; background: var(--gf-bg);
+    }
+
+    /* ══════════════════════════════════
+       PANEL BASE
+    ══════════════════════════════════ */
+    .gfp {
+      background: var(--gf-panel);
+      border: 1px solid var(--gf-border);
+      border-radius: 3px;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+    }
+    .gfp-hdr {
+      display: flex; align-items: center;
+      padding: 6px 10px 4px; gap: 5px;
+      flex: 0 0 auto; min-height: 28px;
+    }
+    .gfp-title {
+      flex: 1; font-size: 12px; font-weight: 500;
+      color: var(--gf-dim); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .gfp:hover .gfp-title { color: var(--gf-text); }
+    .gfp-menu {
+      font-size: 16px; color: var(--gf-muted);
+      cursor: pointer; opacity: 0; transition: opacity .15s;
+      padding: 0 2px;
+    }
+    .gfp:hover .gfp-menu { opacity: 1; }
+    .gfp-body {
+      flex: 1 1 0; overflow: hidden;
+      padding: 4px 10px 8px;
+    }
+    .gfp-body.np { padding: 0; }
+
+    /* Row layouts */
+    .gf-row { display: flex; gap: 8px; }
+    .gf-row.r1 { flex: 0 0 72px; min-height: 72px; }
+    .gf-row.r2 { flex: 1 1 0; min-height: 0; }
+    .gf-row.r3 { flex: 0 0 170px; min-height: 170px; }
+
+    /* ══════════════════════════════════
+       ROW 1 — STAT PANELS
+    ══════════════════════════════════ */
+    .gfp-stat { flex: 1; }
+    .gf-stat {
+      display: flex; align-items: center;
+      padding: 8px 14px; gap: 12px; height: 100%;
+    }
+    .gf-stat-icon {
+      font-size: 26px; flex: 0 0 auto;
+      line-height: 1; opacity: .85;
+    }
+    .gf-stat-data { display: flex; flex-direction: column; gap: 1px; }
+    .gf-stat-val {
+      font-size: 28px; font-weight: 300; line-height: 1;
+    }
+    .gf-stat-label { font-size: 10px; color: var(--gf-dim); }
+    .gf-stat-sub {
+      font-size: 10px; margin-top: 2px;
+      display: flex; align-items: center; gap: 3px;
+    }
+
+    /* color accents */
+    .gf-c-blue   { color: var(--gf-blue); }
+    .gf-c-green  { color: var(--gf-green); }
+    .gf-c-orange { color: var(--gf-orange); }
+    .gf-c-red    { color: var(--gf-red); }
+    .gf-c-yellow { color: var(--gf-yellow); }
+    .gf-c-muted  { color: var(--gf-muted); }
+    .gf-c-dim    { color: var(--gf-dim); }
+
+    /* left accent bar */
+    .gfp-lbar {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px;
+    }
+
+    /* ══════════════════════════════════
+       TIMELINE GANTT PANEL
+    ══════════════════════════════════ */
+    .gfp-gantt { flex: 1 1 0; min-width: 0; }
+    .gfp-gantt .gfp-body { padding: 0; display: flex; flex-direction: column; }
+
+    /* Time axis */
+    .gf-taxis {
+      flex: 0 0 28px; display: flex;
+      border-bottom: 1px solid var(--gf-border2);
+      background: var(--gf-panel2);
+    }
+    .gf-taxis-spacer {
+      flex: 0 0 110px; border-right: 1px solid var(--gf-border2);
+    }
+    .gf-taxis-track { flex: 1; position: relative; overflow: hidden; }
+    .gf-tick {
+      position: absolute; top: 0; bottom: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding-bottom: 3px;
+      transform: translateX(-50%);
+    }
+    .gf-tick-time {
+      font-family: 'Courier New', monospace;
+      font-size: 9px; color: var(--gf-muted); white-space: nowrap;
+    }
+    .gf-tick-line { width: 1px; height: 3px; background: var(--gf-border2); margin-top: 2px; }
+
+    /* Work rows */
+    .gf-rows { flex: 1 1 0; overflow-y: auto; display: flex; flex-direction: column; }
+    .gf-gantt-row {
+      flex: 1 1 0; min-height: 60px;
+      display: flex; border-bottom: 1px solid var(--gf-border);
+    }
+    .gf-gantt-row:last-child { border-bottom: none; }
+    .gf-gantt-row:hover { background: rgba(255,255,255,.02); }
+
+    /* Label */
+    .gf-rlabel {
+      flex: 0 0 110px;
+      padding: 5px 8px 5px 12px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 2px;
+      border-right: 1px solid var(--gf-border2);
+      background: var(--gf-panel);
+      position: sticky; left: 0; z-index: 4;
+    }
+    .gf-gantt-row:hover .gf-rlabel { background: #1d2027; }
+    .gf-rl-accent {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px;
+    }
+    .gf-rl-name { font-size: 11px; font-weight: 700; line-height: 1.2; }
+    .gf-rl-sub  { font-size: 9px; color: var(--gf-dim); }
+    .gf-rl-badge {
+      display: inline-flex; align-items: center;
+      gap: 2px; font-size: 8px; font-weight: 700;
+      padding: 1px 4px; border-radius: 2px; width: fit-content;
+    }
+    .gb-ok   { background: rgba(115,191,105,.15); color: #73bf69; border: 1px solid rgba(115,191,105,.3); }
+    .gb-warn { background: rgba(255,152,48,.15);  color: var(--gf-orange); border: 1px solid rgba(255,152,48,.3); }
+    .gb-idle { background: rgba(142,144,153,.1);  color: var(--gf-muted); border: 1px solid var(--gf-border); }
+
+    /* Track */
+    .gf-rtrack { flex: 1; position: relative; overflow: hidden; }
+
+    /* Grid */
+    .gf-grid {
+      position: absolute; top: 0; bottom: 0;
+      width: 1px; background: rgba(255,255,255,.04);
+      pointer-events: none; z-index: 0;
+    }
+    .gf-grid.major { background: rgba(255,255,255,.08); }
+    .gf-ot-zone {
+      position: absolute; top: 0; bottom: 0;
+      background: rgba(255,152,48,.04);
+      border-left: 1px dashed rgba(255,152,48,.25);
+      pointer-events: none; z-index: 0;
+    }
+    .gf-now {
+      position: absolute; top: 0; bottom: 0;
+      width: 1.5px; background: var(--gf-red);
+      pointer-events: none; z-index: 6;
+    }
+    .gf-now::before {
+      content: '';
+      position: absolute; top: -1px;
+      left: 50%; transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top: 5px solid var(--gf-red);
+    }
+
+    /* Process bars */
+    .gf-bar {
+      position: absolute;
+      top: 18%; height: 64%;
+      border-radius: 2px;
+      display: flex; align-items: center;
+      overflow: hidden; z-index: 3;
+      cursor: pointer; box-sizing: border-box;
+    }
+    .gf-bar:hover { filter: brightness(1.15); z-index: 10; }
+    .gf-blabel {
+      padding: 0 4px; white-space: nowrap;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .gf-bid   { font-size: 8px; font-weight: 700; line-height: 1.2; }
+    .gf-bname { font-size: 7px; line-height: 1.2; opacity: .8; }
+
+    /* Bar variants (Grafana dark palette) */
+    .gb-done      { background: rgba(115,191,105,.22); border: 1px solid rgba(115,191,105,.55); color: #a8e0a3; }
+    .gb-done-late { background: rgba(250,222,42,.15);  border: 1px solid rgba(250,222,42,.5); color: #f5dc5c; }
+    .gb-act-done  { background: rgba(87,148,242,.22);  border: 1px solid rgba(87,148,242,.6); color: #8ab9f6; border-right: none; border-radius: 2px 0 0 2px; }
+    .gb-act-rem   { background: rgba(87,148,242,.05);  border: 1.5px dashed rgba(87,148,242,.3); color: rgba(87,148,242,.5); border-left: none; border-radius: 0 2px 2px 0; }
+    .gb-del-done  { background: rgba(255,152,48,.2);   border: 1px solid rgba(255,152,48,.6); color: #ffb266; border-right: none; border-radius: 2px 0 0 2px; }
+    .gb-del-rem   { background: rgba(255,152,48,.05);  border: 1.5px dashed rgba(255,152,48,.35); color: rgba(255,152,48,.5); border-left: none; border-radius: 0 2px 2px 0; }
+    .gb-idle      { background: rgba(255,255,255,.04); border: 1px solid var(--gf-border); color: var(--gf-muted); }
+
+    /* Tooltip */
+    .gf-bar .gf-tt {
+      display: none;
+      position: absolute; bottom: calc(100% + 8px); left: 0;
+      background: #21242b; border: 1px solid var(--gf-border2);
+      border-radius: 4px; padding: 8px 12px;
+      font-size: 10px; white-space: nowrap;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      pointer-events: none;
+    }
+    .gf-bar:hover .gf-tt { display: block; }
+    .gf-tt-title { font-weight: 700; color: var(--gf-text); margin-bottom: 6px; font-size: 11px; }
+    .gf-tt-row   { display: flex; gap: 8px; line-height: 1.6; font-size: 10px; }
+    .gf-tt-key   { color: var(--gf-dim); min-width: 55px; }
+    .gf-tt-val   { color: var(--gf-text); font-weight: 600; font-family: 'Courier New', monospace; }
+
+    /* ══════════════════════════════════
+       RIGHT COLUMN
+    ══════════════════════════════════ */
+    .gf-rcol {
+      width: 200px; flex: 0 0 200px;
+      display: flex; flex-direction: column; gap: 8px;
+      overflow: hidden;
+    }
+
+    /* Status list */
+    .gf-slist { display: flex; flex-direction: column; gap: 3px; }
+    .gf-srow {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 6px; border-radius: 3px;
+      background: var(--gf-panel2); border: 1px solid transparent;
+    }
+    .gf-srow.warn { border-color: rgba(255,152,48,.25); }
+    .gf-srow.ok   { border-color: rgba(115,191,105,.15); }
+    .gf-sdot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+    .gf-sname { flex: 1; font-size: 11px; color: var(--gf-text); font-weight: 600; }
+    .gf-sstatus { font-size: 10px; color: var(--gf-dim); }
+    .gf-spct {
+      font-family: 'Courier New', monospace;
+      font-size: 11px; font-weight: 700;
+    }
+
+    /* Bar gauge */
+    .gf-bgauge { display: flex; flex-direction: column; gap: 7px; }
+    .gf-bg-row { display: flex; flex-direction: column; gap: 2px; }
+    .gf-bg-hdr { display: flex; justify-content: space-between; font-size: 10px; }
+    .gf-bg-name { color: var(--gf-dim); }
+    .gf-bg-pct  { color: var(--gf-text); font-family: 'Courier New', monospace; font-weight: 700; }
+    .gf-bg-track {
+      height: 5px; background: rgba(255,255,255,.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    .gf-bg-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+
+    /* ══════════════════════════════════
+       ROW 3 BOTTOM
+    ══════════════════════════════════ */
+    /* Log table */
+    .gf-logtable { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .gf-logtable th {
+      text-align: left; padding: 3px 8px;
+      background: var(--gf-panel2);
+      font-size: 9px; font-weight: 700;
+      color: var(--gf-muted); text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--gf-border2);
+      white-space: nowrap;
+    }
+    .gf-logtable td {
+      padding: 4px 8px; border-bottom: 1px solid var(--gf-border);
+      vertical-align: middle;
+    }
+    .gf-logtable tr:last-child td { border-bottom: none; }
+    .gf-logtable tr:hover td { background: rgba(255,255,255,.03); }
+    .gf-lt-time { font-family: 'Courier New', monospace; color: var(--gf-muted); white-space: nowrap; }
+    .gf-lt-badge {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px;
+    }
+    .gflb-ok   { background: rgba(115,191,105,.15); color: var(--gf-green); }
+    .gflb-warn { background: rgba(255,152,48,.15);  color: var(--gf-orange); }
+    .gflb-err  { background: rgba(242,73,92,.15);   color: var(--gf-red); }
+    .gf-lt-work { font-weight: 700; color: var(--gf-text); white-space: nowrap; }
+    .gf-lt-msg  { color: var(--gf-dim); }
+
+    /* Sparkline placeholder */
+    .gf-spark { flex: 1; }
+    .gf-spark-inner {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 2px 0 6px;
+    }
+    .gf-spk-row { display: flex; align-items: center; gap: 8px; }
+    .gf-spk-label { width: 56px; font-size: 10px; color: var(--gf-dim); flex: 0 0 56px; }
+    .gf-spk-bars { flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+    .gf-spk-bar { flex: 1; border-radius: 1px 1px 0 0; }
+    .gf-spk-val { font-size: 11px; font-weight: 700; font-family: 'Courier New', monospace; width: 36px; text-align: right; }
+
+    /* ══════════════════════════════════
+       BOTTOM STATUS BAR
+    ══════════════════════════════════ */
+    .gf-footer {
+      flex: 0 0 24px;
+      background: var(--gf-panel);
+      border-top: 1px solid var(--gf-border);
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 16px;
+      font-size: 10px; color: var(--gf-muted);
+    }
+    .gf-footer strong { color: var(--gf-dim); }
+    .gf-footer-sep { width: 1px; height: 12px; background: var(--gf-border); }
+    .gf-footer a { color: var(--gf-blue); text-decoration: none; }
+    .gf-footer a:hover { text-decoration: underline; }
+    .gf-state-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--gf-green); display: inline-block;
+      box-shadow: 0 0 5px var(--gf-green); flex: 0 0 6px;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gf-border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gf-muted); }
+  </style>
+</head>
+<body style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="gf-topbar">
+  <div class="gf-logo">
+    <div class="gf-logo-icon">⬡</div>
+    <span class="gf-logo-text">Grafana</span>
+  </div>
+  <div class="gf-nav">
+    <button class="gf-navbtn">☰</button>
+    <button class="gf-navbtn active">⊞ ダッシュボード</button>
+    <button class="gf-navbtn">⬡ Explore</button>
+    <button class="gf-navbtn">🔔 アラート</button>
+    <button class="gf-navbtn">⚙ 設定</button>
+  </div>
+  <div class="gf-searchbar">🔍 <span>ダッシュボードを検索…</span></div>
+  <div class="gf-topright">
+    <button class="gf-tbtn" title="コメント">💬</button>
+    <button class="gf-tbtn" title="共有">⤴</button>
+    <button class="gf-tbtn" title="設定">⚙</button>
+    <button class="gf-tbtn" title="ユーザー">👤</button>
+  </div>
+</div>
+
+<!-- ═══════════ DASHBOARD HEADER ═══════════ -->
+<div class="gf-dbhdr">
+  <div class="gf-dbhdr-star">☆</div>
+  <div class="gf-dbtitle">生産管理板 / 第1ライン — 本日</div>
+  <span class="gf-dbtag">LAYOUT 10</span>
+  <span class="gf-dbtag warn" style="margin-left:6px">⚠ 遅延 1件</span>
+  <div style="flex:1"></div>
+  <div class="gf-dbtime">
+    🕐 <strong id="gf-clock">--:--</strong>
+    &nbsp;|&nbsp; 最終更新: <strong id="gf-refresh">--:--</strong>
+  </div>
+  <button class="gf-dbctrl" style="margin-left:8px">🕐 Today &nbsp;▾</button>
+  <button class="gf-dbctrl" style="margin-left:4px">🔄 5m &nbsp;▾</button>
+  <button class="gf-dbctrl blue" style="margin-left:4px">⟳ 更新</button>
+</div>
+
+<!-- ═══════════ MAIN CANVAS ═══════════ -->
+<div class="gf-main">
+
+  <!-- ════ ROW 1 — STAT PANELS ════ -->
+  <div class="gf-row r1">
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-blue)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">本日計画</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-blue">5<span style="font-size:14px;color:var(--gf-dim);margin-left:3px">台</span></div>
+            <div class="gf-stat-label">第1ライン / 製品 α β γ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-blue)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">進行中</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-blue">4<span style="font-size:14px;color:var(--gf-dim);margin-left:3px">ワーク</span></div>
+            <div class="gf-stat-label gf-c-green" style="font-weight:600">▲ 計画通り進行</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-orange)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">遅延</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-orange">1<span style="font-size:14px;color:var(--gf-dim);margin-left:3px">ワーク</span></div>
+            <div class="gf-stat-label" style="color:var(--gf-orange)">WORK B &nbsp;+4分遅延</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-muted)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">完成済</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-muted">0<span style="font-size:14px;color:var(--gf-muted);margin-left:3px">/ 5台</span></div>
+            <div class="gf-stat-label">目標 5台</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-muted)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">待機</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-muted">1<span style="font-size:14px;color:var(--gf-muted);margin-left:3px">ワーク</span></div>
+            <div class="gf-stat-label">WORK C #2 — 14:00 開始予定</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gfp gfp-stat">
+      <div class="gfp-lbar" style="background:var(--gf-green)"></div>
+      <div class="gfp-hdr"><div class="gfp-title">不良件数</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:2px 14px 6px">
+        <div class="gf-stat">
+          <div class="gf-stat-data">
+            <div class="gf-stat-val gf-c-green">0<span style="font-size:14px;color:var(--gf-dim);margin-left:3px">件</span></div>
+            <div class="gf-stat-label gf-c-green" style="font-weight:600">✓ 目標達成</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row1 -->
+
+  <!-- ════ ROW 2 — MAIN ════ -->
+  <div class="gf-row r2">
+
+    <!-- Gantt panel -->
+    <div class="gfp gfp-gantt">
+      <div class="gfp-hdr">
+        <div class="gfp-title">タイムライン ガントチャート — 08:00–18:00</div>
+        <div class="gfp-menu">⋯</div>
+      </div>
+      <div class="gfp-body np">
+
+        <!-- Axis -->
+        <div class="gf-taxis">
+          <div class="gf-taxis-spacer"></div>
+          <div class="gf-taxis-track" id="gf-axis"></div>
+        </div>
+
+        <!-- Rows -->
+        <div class="gf-rows" id="gf-rows"></div>
+
+      </div>
+    </div>
+
+    <!-- Right col -->
+    <div class="gf-rcol">
+
+      <!-- Status list -->
+      <div class="gfp" style="flex:0 0 180px">
+        <div class="gfp-hdr"><div class="gfp-title">ワーク状態</div><div class="gfp-menu">⋯</div></div>
+        <div class="gfp-body" style="padding:4px 8px 8px">
+          <div class="gf-slist">
+            <div class="gf-srow ok">
+              <div class="gf-sdot" style="background:var(--gf-blue)"></div>
+              <span class="gf-sname" style="color:var(--gf-blue)">WORK A #1</span>
+              <span class="gf-sstatus">P06進行中</span>
+              <span class="gf-spct gf-c-blue">50%</span>
+            </div>
+            <div class="gf-srow ok">
+              <div class="gf-sdot" style="background:#5ba3f5"></div>
+              <span class="gf-sname" style="color:#5ba3f5">WORK A #2</span>
+              <span class="gf-sstatus">P09進行中</span>
+              <span class="gf-spct" style="color:#5ba3f5">80%</span>
+            </div>
+            <div class="gf-srow warn">
+              <div class="gf-sdot" style="background:var(--gf-orange)"></div>
+              <span class="gf-sname" style="color:var(--gf-orange)">WORK B</span>
+              <span class="gf-sstatus">P15遅延</span>
+              <span class="gf-spct gf-c-orange">+4m</span>
+            </div>
+            <div class="gf-srow ok">
+              <div class="gf-sdot" style="background:var(--gf-green)"></div>
+              <span class="gf-sname" style="color:var(--gf-green)">WORK C #1</span>
+              <span class="gf-sstatus">P20進行中</span>
+              <span class="gf-spct gf-c-green">75%</span>
+            </div>
+            <div class="gf-srow">
+              <div class="gf-sdot" style="background:var(--gf-muted)"></div>
+              <span class="gf-sname gf-c-muted">WORK C #2</span>
+              <span class="gf-sstatus">待機中</span>
+              <span class="gf-spct gf-c-muted">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar gauge: 工程進捗 -->
+      <div class="gfp" style="flex:1 1 0">
+        <div class="gfp-hdr"><div class="gfp-title">工程進捗率</div><div class="gfp-menu">⋯</div></div>
+        <div class="gfp-body" style="padding:4px 10px 8px">
+          <div class="gf-bgauge" id="gf-bgauge"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /row2 -->
+
+  <!-- ════ ROW 3 — BOTTOM ════ -->
+  <div class="gf-row r3">
+
+    <!-- Sparkline bars -->
+    <div class="gfp gf-spark" style="flex:0 0 260px">
+      <div class="gfp-hdr"><div class="gfp-title">工程別 サイクルタイム (分)</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body" style="padding:4px 10px 6px">
+        <div class="gf-spark-inner" id="gf-spark"></div>
+      </div>
+    </div>
+
+    <!-- Alert log table -->
+    <div class="gfp" style="flex:1">
+      <div class="gfp-hdr"><div class="gfp-title">アラートログ — 本日</div><div class="gfp-menu">⋯</div></div>
+      <div class="gfp-body np" style="overflow-x:auto">
+        <table class="gf-logtable">
+          <thead>
+            <tr>
+              <th>時刻</th>
+              <th>レベル</th>
+              <th>ワーク</th>
+              <th>工程</th>
+              <th>メッセージ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="gf-lt-time">13:28</td>
+              <td><span class="gf-lt-badge gflb-warn">⚠ WARN</span></td>
+              <td class="gf-lt-work" style="color:var(--gf-orange)">WORK B</td>
+              <td style="font-family:'Courier New',monospace;color:var(--gf-dim)">P15</td>
+              <td class="gf-lt-msg">出荷開始（+4分遅延）— 計画 13:24 → 実績 13:28</td>
+            </tr>
+            <tr>
+              <td class="gf-lt-time">12:50</td>
+              <td><span class="gf-lt-badge gflb-warn">⚠ WARN</span></td>
+              <td class="gf-lt-work" style="color:var(--gf-orange)">WORK B</td>
+              <td style="font-family:'Courier New',monospace;color:var(--gf-dim)">P14</td>
+              <td class="gf-lt-msg">組立完了（+2分遅延）— 計画 13:24 → 実績 13:26</td>
+            </tr>
+            <tr>
+              <td class="gf-lt-time">12:00</td>
+              <td><span class="gf-lt-badge gflb-ok">✓ OK</span></td>
+              <td class="gf-lt-work" style="color:var(--gf-green)">WORK C #1</td>
+              <td style="font-family:'Courier New',monospace;color:var(--gf-dim)">P20</td>
+              <td class="gf-lt-msg">製造・検査 定刻開始 — 計画 12:00 → 実績 12:00</td>
+            </tr>
+            <tr>
+              <td class="gf-lt-time">11:30</td>
+              <td><span class="gf-lt-badge gflb-ok">✓ OK</span></td>
+              <td class="gf-lt-work" style="color:#5ba3f5">WORK A #2</td>
+              <td style="font-family:'Courier New',monospace;color:var(--gf-dim)">P06</td>
+              <td class="gf-lt-msg">表面処理 開始 — 前シフト引継ぎ完了</td>
+            </tr>
+            <tr>
+              <td class="gf-lt-time">08:00</td>
+              <td><span class="gf-lt-badge gflb-ok">✓ OK</span></td>
+              <td class="gf-lt-work" style="color:var(--gf-dim)">全ライン</td>
+              <td style="font-family:'Courier New',monospace;color:var(--gf-dim)">—</td>
+              <td class="gf-lt-msg">始業点検完了・全設備 ONLINE</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /row3 -->
+
+</div><!-- /gf-main -->
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<div class="gf-footer">
+  <div class="gf-state-dot"></div>
+  <span>データソース: <strong>生産管理 DB</strong></span>
+  <div class="gf-footer-sep"></div>
+  <span>更新間隔: <strong>30秒</strong></span>
+  <div class="gf-footer-sep"></div>
+  <span>表示範囲: <strong>08:00 – 18:00</strong></span>
+  <div style="flex:1"></div>
+  <a href="index.html">← レイアウト選択に戻る</a>
+  <div class="gf-footer-sep"></div>
+  <span>Grafana v10.x 風 UI &nbsp;|&nbsp; Static HTML</span>
+</div>
+
+<script>
+// ── Clock ──
+function fmt(n) { return String(n).padStart(2,'0'); }
+function updateClock() {
+  const n = new Date();
+  const t = fmt(n.getHours()) + ':' + fmt(n.getMinutes());
+  document.getElementById('gf-clock').textContent = t;
+  document.getElementById('gf-refresh').textContent = t;
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// ── Timeline ──
+const SHIFT_START = 8 * 60;
+const SHIFT_TOTAL = 10 * 60;
+const NOW_STR     = '13:30';
+
+function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+function pct(t)   { return Math.max(0,Math.min(100,(toMin(t)-SHIFT_START)/SHIFT_TOTAL*100)); }
+function wPct(s,e){ return Math.max(0,(toMin(e)-toMin(s))/SHIFT_TOTAL*100); }
+const NOW_PCT = pct(NOW_STR);
+
+// ── Work data ──
+const WORKS = [
+  {
+    label:'WORK A #1', color:'var(--gf-blue)', accentColor:'var(--gf-blue)',
+    status:'ok', badge:'● 正常', badgeCls:'gb-ok',
+    lot:'A-001', note:null,
+    procs:[
+      {id:'P01',name:'材料投入',  state:'done',      as:'08:00',ae:'08:28',ps:'08:00',pe:'08:30'},
+      {id:'P02',name:'切断加工',  state:'done-late', as:'08:28',ae:'09:32',ps:'08:30',pe:'09:30'},
+      {id:'P03',name:'穴あけ',    state:'done',      as:'09:32',ae:'10:31',ps:'09:30',pe:'10:30'},
+      {id:'P04',name:'組付',      state:'done-late', as:'10:31',ae:'12:02',ps:'10:30',pe:'12:00'},
+      {id:'P05',name:'配線',      state:'done-late', as:'12:02',ae:'12:52',ps:'12:00',pe:'12:50'},
+      {id:'P06',name:'表面処理',  state:'active',    as:'12:52',ae:null,   ps:'12:50',pe:'14:00'},
+      {id:'P07',name:'中間検査',  state:'idle',      as:null,   ae:null,   ps:'14:00',pe:'14:30'},
+      {id:'P08',name:'最終組付',  state:'idle',      as:null,   ae:null,   ps:'14:30',pe:'15:20'},
+      {id:'P09',name:'最終検査',  state:'idle',      as:null,   ae:null,   ps:'15:20',pe:'15:50'},
+      {id:'P10',name:'出荷梱包',  state:'idle',      as:null,   ae:null,   ps:'15:50',pe:'16:00'},
+    ],
+  },
+  {
+    label:'WORK A #2', color:'#5ba3f5', accentColor:'#5ba3f5',
+    status:'ok', badge:'● 正常', badgeCls:'gb-ok',
+    lot:'A-002', note:'P01–05 前シフト完了',
+    procs:[
+      {id:'P06',name:'表面処理',  state:'done',      as:'11:30',ae:'12:14',ps:'11:30',pe:'12:15'},
+      {id:'P07',name:'中間検査',  state:'done',      as:'12:14',ae:'12:44',ps:'12:15',pe:'12:45'},
+      {id:'P08',name:'最終組付',  state:'done-late', as:'12:44',ae:'13:26',ps:'12:45',pe:'13:25'},
+      {id:'P09',name:'最終検査',  state:'active',    as:'13:26',ae:null,   ps:'13:25',pe:'13:55'},
+      {id:'P10',name:'出荷梱包',  state:'idle',      as:null,   ae:null,   ps:'13:55',pe:'14:15'},
+    ],
+  },
+  {
+    label:'WORK B', color:'var(--gf-orange)', accentColor:'var(--gf-orange)',
+    status:'warn', badge:'▲ 遅延', badgeCls:'gb-warn',
+    lot:'B-001', note:null,
+    procs:[
+      {id:'P11',name:'素材カット',state:'done',      as:'11:00',ae:'11:35',ps:'11:00',pe:'11:36'},
+      {id:'P12',name:'加工',      state:'done-late', as:'11:35',ae:'12:15',ps:'11:36',pe:'12:12'},
+      {id:'P13',name:'検査',      state:'done-late', as:'12:15',ae:'12:50',ps:'12:12',pe:'12:48'},
+      {id:'P14',name:'組立',      state:'done-late', as:'12:50',ae:'13:28',ps:'12:48',pe:'13:24'},
+      {id:'P15',name:'出荷',      state:'delayed',   as:'13:28',ae:null,   ps:'13:24',pe:'14:00'},
+    ],
+  },
+  {
+    label:'WORK C #1', color:'var(--gf-green)', accentColor:'var(--gf-green)',
+    status:'ok', badge:'● 正常', badgeCls:'gb-ok',
+    lot:'C-001', note:null,
+    procs:[
+      {id:'P20',name:'製造・検査',state:'active', as:'12:00',ae:null,ps:'12:00',pe:'14:00'},
+    ],
+  },
+  {
+    label:'WORK C #2', color:'var(--gf-muted)', accentColor:'var(--gf-muted)',
+    status:'idle', badge:'◎ 待機', badgeCls:'gb-idle',
+    lot:'C-002', note:null,
+    procs:[
+      {id:'P20',name:'製造・検査',state:'idle', as:null,ae:null,ps:'14:00',pe:'16:00'},
+    ],
+  },
+];
+
+// ── Time axis ──
+const axisEl = document.getElementById('gf-axis');
+for (let h = 8; h <= 18; h++) {
+  const t = fmt(h) + ':00';
+  const tick = document.createElement('div');
+  tick.className = 'gf-tick';
+  tick.style.left = pct(t) + '%';
+  tick.innerHTML = `<span class="gf-tick-time">${t}</span><span class="gf-tick-line"></span>`;
+  axisEl.appendChild(tick);
+}
+// OT label
+const otLbl = document.createElement('span');
+otLbl.style.cssText = 'position:absolute;top:5px;font-size:8px;color:var(--gf-orange);white-space:nowrap;padding-left:4px;opacity:.7;';
+otLbl.style.left = pct('17:00') + '%';
+otLbl.textContent = 'OT';
+axisEl.appendChild(otLbl);
+
+// ── Gantt rows ──
+const rowsEl = document.getElementById('gf-rows');
+
+const STATE_LBL = {
+  done:'完了（定刻）','done-late':'完了（遅延）',
+  active:'進行中',delayed:'遅延中',idle:'未着手',
+};
+
+WORKS.forEach(work => {
+  const row = document.createElement('div');
+  row.className = 'gf-gantt-row';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'gf-rlabel';
+  lbl.innerHTML =
+    `<div class="gf-rl-accent" style="background:${work.accentColor}"></div>` +
+    `<div class="gf-rl-name" style="color:${work.color}">${work.label}</div>` +
+    `<span class="gf-rl-badge ${work.badgeCls}">${work.badge}</span>` +
+    `<div class="gf-rl-sub">LOT: ${work.lot}</div>` +
+    (work.note ? `<div class="gf-rl-sub">${work.note}</div>` : '');
+
+  const track = document.createElement('div');
+  track.className = 'gf-rtrack';
+
+  // Grid lines
+  for (let h = 8; h <= 18; h++) {
+    const g = document.createElement('div');
+    g.className = 'gf-grid' + (h % 2 === 0 ? ' major' : '');
+    g.style.left = pct(fmt(h)+':00') + '%';
+    track.appendChild(g);
+  }
+  // OT zone
+  const ot = document.createElement('div');
+  ot.className = 'gf-ot-zone';
+  ot.style.left  = pct('17:00') + '%';
+  ot.style.width = wPct('17:00','18:00') + '%';
+  track.appendChild(ot);
+
+  // NOW line
+  const nw = document.createElement('div');
+  nw.className = 'gf-now';
+  nw.style.left = NOW_PCT + '%';
+  track.appendChild(nw);
+
+  // Bars
+  work.procs.forEach(p => {
+    const sl = STATE_LBL[p.state] || p.state;
+    const makeTT = (extra) =>
+      `<div class="gf-tt">` +
+        `<div class="gf-tt-title">${p.id} — ${p.name}</div>` +
+        `<div class="gf-tt-row"><span class="gf-tt-key">状態</span><span class="gf-tt-val">${sl}</span></div>` +
+        `<div class="gf-tt-row"><span class="gf-tt-key">計画</span><span class="gf-tt-val">${p.ps} – ${p.pe}</span></div>` +
+        extra +
+      `</div>`;
+
+    if (p.state === 'done' || p.state === 'done-late') {
+      const bar = document.createElement('div');
+      bar.className = `gf-bar ${p.state === 'done' ? 'gb-done' : 'gb-done-late'}`;
+      bar.style.left  = pct(p.as) + '%';
+      bar.style.width = Math.max(wPct(p.as, p.ae), 0.4) + '%';
+      bar.innerHTML =
+        `<div class="gf-blabel"><span class="gf-bid">${p.id}</span><span class="gf-bname">${p.name}</span></div>` +
+        makeTT(`<div class="gf-tt-row"><span class="gf-tt-key">実績</span><span class="gf-tt-val">${p.as} – ${p.ae}</span></div>`);
+      track.appendChild(bar);
+
+    } else if (p.state === 'active' || p.state === 'delayed') {
+      const isDel = p.state === 'delayed';
+      const startP = pct(p.as);
+      const endP   = pct(p.pe);
+      const doneP  = NOW_PCT - startP;
+      const remP   = endP - NOW_PCT;
+      const ttEx =
+        `<div class="gf-tt-row"><span class="gf-tt-key">実績開始</span><span class="gf-tt-val">${p.as}</span></div>` +
+        `<div class="gf-tt-row"><span class="gf-tt-key">現在</span><span class="gf-tt-val">${NOW_STR} (進行中)</span></div>`;
+
+      if (doneP > 0) {
+        const b = document.createElement('div');
+        b.className = `gf-bar ${isDel ? 'gb-del-done' : 'gb-act-done'}`;
+        b.style.left  = startP + '%';
+        b.style.width = Math.max(doneP, 0.4) + '%';
+        b.innerHTML =
+          `<div class="gf-blabel"><span class="gf-bid">${p.id}</span><span class="gf-bname">${p.name}</span></div>` +
+          makeTT(ttEx);
+        track.appendChild(b);
+      }
+      if (remP > 0) {
+        const b = document.createElement('div');
+        b.className = `gf-bar ${isDel ? 'gb-del-rem' : 'gb-act-rem'}`;
+        b.style.left  = NOW_PCT + '%';
+        b.style.width = Math.max(remP, 0.4) + '%';
+        b.innerHTML =
+          `<div class="gf-blabel"><span class="gf-bid" style="opacity:.5">${p.id}</span></div>` +
+          makeTT(ttEx);
+        track.appendChild(b);
+      }
+    } else if (p.state === 'idle') {
+      const bar = document.createElement('div');
+      bar.className = 'gf-bar gb-idle';
+      bar.style.left  = pct(p.ps) + '%';
+      bar.style.width = Math.max(wPct(p.ps, p.pe), 0.4) + '%';
+      bar.innerHTML =
+        `<div class="gf-blabel"><span class="gf-bid">${p.id}</span><span class="gf-bname">${p.name}</span></div>` +
+        makeTT('');
+      track.appendChild(bar);
+    }
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(track);
+  rowsEl.appendChild(row);
+});
+
+// ── Bar gauge ──
+const GAUGES = [
+  {name:'WORK A #1', pct:50,  color:'var(--gf-blue)'},
+  {name:'WORK A #2', pct:80,  color:'#5ba3f5'},
+  {name:'WORK B',    pct:80,  color:'var(--gf-orange)'},
+  {name:'WORK C #1', pct:75,  color:'var(--gf-green)'},
+  {name:'WORK C #2', pct:0,   color:'var(--gf-muted)'},
+];
+const bgEl = document.getElementById('gf-bgauge');
+GAUGES.forEach(g => {
+  const div = document.createElement('div');
+  div.className = 'gf-bg-row';
+  div.innerHTML =
+    `<div class="gf-bg-hdr">` +
+      `<span class="gf-bg-name">${g.name}</span>` +
+      `<span class="gf-bg-pct">${g.pct}%</span>` +
+    `</div>` +
+    `<div class="gf-bg-track">` +
+      `<div class="gf-bg-fill" style="width:${g.pct}%;background:${g.color}"></div>` +
+    `</div>`;
+  bgEl.appendChild(div);
+});
+
+// ── Sparkline (bar chart) ──
+const SPARK_DATA = [
+  {
+    label:'WORK A', color:'var(--gf-blue)',
+    vals:[28,62,59,91,50,null,null,null,null,null],
+    names:['P01','P02','P03','P04','P05','P06','P07','P08','P09','P10'],
+  },
+  {
+    label:'WORK B', color:'var(--gf-orange)',
+    vals:[35,40,35,38,null,null,null,null,null,null],
+    names:['P11','P12','P13','P14','P15'],
+  },
+  {
+    label:'WORK C', color:'var(--gf-green)',
+    vals:[null,null,null,null,null,null,null,null,null,null],
+    names:['P20'],
+  },
+];
+const spEl = document.getElementById('gf-spark');
+SPARK_DATA.forEach(s => {
+  const validVals = s.vals.filter(v => v !== null);
+  const maxV = Math.max(...validVals, 1);
+  const row = document.createElement('div');
+  row.className = 'gf-spk-row';
+
+  let barsHtml = '';
+  s.vals.slice(0, 10).forEach((v, i) => {
+    const h = v !== null ? Math.max(3, Math.round(v / maxV * 26)) : 3;
+    const opacity = v !== null ? 1 : 0.2;
+    barsHtml += `<div class="gf-spk-bar" title="${s.names[i] || ''}:${v !== null ? v+'分' : '未実施'}"
+      style="height:${h}px;background:${s.color};opacity:${opacity}"></div>`;
+  });
+
+  const lastVal = validVals[validVals.length - 1];
+  const valStr = lastVal !== undefined ? lastVal + 'm' : '—';
+
+  row.innerHTML =
+    `<span class="gf-spk-label">${s.label}</span>` +
+    `<div class="gf-spk-bars">${barsHtml}</div>` +
+    `<span class="gf-spk-val" style="color:${s.color}">${valStr}</span>`;
+  spEl.appendChild(row);
+});
+</script>
+</body>
+</html>
