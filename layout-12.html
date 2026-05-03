@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト12</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f4f5f7;
+      --surface:  #ffffff;
+      --border:   #e2e4e9;
+      --border2:  #c9ccd4;
+      --text:     #1a1d23;
+      --sub:      #3d4151;
+      --dim:      #8890a4;
+      --mono:     'Courier New', monospace;
+
+      /* Status colors */
+      --c-done:        #16a34a;
+      --bg-done:       #dcfce7;
+      --brd-done:      #86efac;
+
+      --c-late:        #92400e;
+      --bg-late:       #fef9c3;
+      --brd-late:      #fcd34d;
+
+      --c-active:      #1d4ed8;
+      --bg-active:     #dbeafe;
+      --brd-active:    #60a5fa;
+
+      --c-delay:       #92400e;
+      --bg-delay:      #ffedd5;
+      --brd-delay:     #fb923c;
+
+      --c-idle:        #9ca3af;
+      --bg-idle:       #f1f5f9;
+      --brd-idle:      #cbd5e1;
+
+      --c-plan:        #5b6a8a;
+      --bg-plan:       #eef2f9;
+      --brd-plan:      #bcc8de;
+
+      --now-color:     #dc2626;
+      --shift-end:     rgba(202,80,16,.35);
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'Meiryo', 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    /* ═══════════ HEADER ═══════════ */
+    .hd {
+      flex: 0 0 52px;
+      background: var(--text);
+      color: #fff;
+      display: flex; align-items: center;
+      padding: 0 20px; gap: 0;
+    }
+    .hd-title {
+      font-size: 18px; font-weight: 900;
+      letter-spacing: .16em; margin-right: 18px;
+    }
+    .hd-tag {
+      font-size: 9px; color: rgba(255,255,255,.5);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 2px; padding: 1px 6px;
+      letter-spacing: .06em; margin-right: 18px;
+    }
+    .hd-sep { width: 1px; height: 20px; background: rgba(255,255,255,.15); margin: 0 14px; }
+    .hd-meta { font-size: 12px; color: rgba(255,255,255,.55); }
+    .hd-kpis { display: flex; gap: 3px; margin-left: auto; }
+    .hd-kpi {
+      display: flex; flex-direction: column; align-items: center;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 3px; padding: 3px 12px;
+    }
+    .hk-val   { font-family: var(--mono); font-size: 18px; line-height: 1; color: #fff; }
+    .hk-label { font-size: 9px; color: rgba(255,255,255,.45); margin-top: 1px; }
+    .hd-clock {
+      font-family: var(--mono); font-size: 22px; font-weight: 300;
+      color: #fff; margin-left: 18px;
+    }
+    .back-link {
+      font-size: 11px; color: rgba(255,255,255,.5);
+      text-decoration: none; margin-left: 16px;
+      padding: 3px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 2px;
+    }
+    .back-link:hover { color: #fff; }
+
+    /* ═══════════ MAIN GRID ═══════════ */
+    /* outer wrapper: side-by-side time-axis + work-columns */
+    .main {
+      flex: 1 1 0;
+      display: flex;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    /* ── Left: time axis ── */
+    .time-axis {
+      flex: 0 0 58px;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border2);
+      position: relative; z-index: 5;
+    }
+    /* spacer to match the column-header height */
+    .ta-spacer {
+      flex: 0 0 72px;
+      border-bottom: 2px solid var(--border2);
+      background: var(--bg);
+    }
+    .ta-track {
+      flex: 1 1 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .ta-tick {
+      position: absolute; right: 0;
+      display: flex; align-items: center;
+      transform: translateY(-50%);
+      gap: 0;
+    }
+    .ta-tick-time {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--dim); padding-right: 6px;
+      white-space: nowrap; text-align: right;
+    }
+    .ta-tick-line {
+      width: 6px; height: 1px; background: var(--border2);
+    }
+    .ta-tick.major .ta-tick-time { color: var(--sub); font-weight: 700; font-size: 11px; }
+    .ta-tick.major .ta-tick-line { width: 8px; }
+
+    /* ── Right: scrollable work columns ── */
+    .work-cols-outer {
+      flex: 1 1 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Sticky column headers */
+    .col-headers {
+      flex: 0 0 72px;
+      display: flex;
+      border-bottom: 2px solid var(--border2);
+      background: var(--bg);
+      position: relative; z-index: 4;
+    }
+    .col-hd {
+      flex: 1;
+      padding: 8px 10px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 4px;
+      border-right: 1px solid var(--border);
+    }
+    .col-hd:last-child { border-right: none; }
+    .col-hd-name { font-size: 15px; font-weight: 800; line-height: 1; letter-spacing: .03em; }
+    .col-hd-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 9px; font-weight: 700; letter-spacing: .06em;
+      padding: 1px 6px; border-radius: 2px; width: fit-content;
+    }
+    .chb-ok   { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .chb-warn { background: #ffedd5; color: #7c2d12; border: 1px solid #fb923c; }
+    .chb-idle { background: var(--bg); color: var(--dim); border: 1px solid var(--border2); }
+    .col-hd-sub { font-size: 9px; color: var(--dim); }
+
+    /* Scrollable track area */
+    .track-area {
+      flex: 1 1 0;
+      display: flex;
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* ── The actual timeline track: defines height ── */
+    .track-inner {
+      display: flex;
+      width: 100%;
+      /* Height = timeline element */
+      position: relative;
+    }
+
+    /* Column tracks */
+    .col-track {
+      flex: 1;
+      position: relative;
+      border-right: 1px solid var(--border);
+    }
+    .col-track:last-child { border-right: none; }
+
+    /* ── Gridlines (in each column) ── */
+    .grid-h {
+      position: absolute; left: 0; right: 0;
+      height: 1px; pointer-events: none; z-index: 0;
+    }
+    .grid-h.major { background: var(--border2); }
+    .grid-h.minor { background: var(--border); }
+
+    /* Shift-end zone */
+    .shift-end-zone {
+      position: absolute; left: 0; right: 0;
+      background: rgba(202,80,16,.04);
+      border-top: 1.5px dashed var(--shift-end);
+      pointer-events: none; z-index: 1;
+    }
+
+    /* ── Process blocks ── */
+    .p-block {
+      position: absolute;
+      left: 14%; width: 72%;
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      justify-content: flex-start;
+      padding: 2px 4px;
+      cursor: default;
+      box-sizing: border-box;
+      z-index: 2;
+      transition: filter .15s;
+      min-height: 14px;
+    }
+    .p-block:hover { filter: brightness(.93); z-index: 20; }
+
+    /* Plan block (behind) */
+    .p-block.plan {
+      left: 8%; width: 84%;
+      background: var(--bg-plan);
+      border: 1px solid var(--brd-plan);
+      z-index: 1;
+      opacity: .85;
+    }
+
+    /* Actual blocks (in front, narrower) */
+    .p-block.done     { background: var(--bg-done);   border: 1px solid var(--brd-done);   color: var(--c-done); }
+    .p-block.done-late{ background: var(--bg-late);   border: 1px solid var(--brd-late);   color: var(--c-late); }
+    .p-block.act-done { background: var(--bg-active); border: 1px solid var(--brd-active); color: var(--c-active);
+      border-bottom: none; border-radius: 3px 3px 0 0; }
+    .p-block.act-rem  { background: rgba(29,78,216,.04); border: 1.5px dashed var(--brd-active);
+      color: rgba(29,78,216,.5); border-top: none; border-radius: 0 0 3px 3px; z-index: 1; }
+    .p-block.del-done { background: var(--bg-delay);  border: 1px solid var(--brd-delay);  color: var(--c-delay);
+      border-bottom: none; border-radius: 3px 3px 0 0; }
+    .p-block.del-rem  { background: rgba(146,64,14,.04); border: 1.5px dashed var(--brd-delay);
+      color: rgba(146,64,14,.5); border-top: none; border-radius: 0 0 3px 3px; z-index: 1; }
+
+    /* Pulsing for active / delayed */
+    @keyframes pulse-act { 0%,100%{opacity:1} 50%{opacity:.6} }
+    @keyframes pulse-del { 0%,100%{opacity:1} 50%{opacity:.55} }
+    .p-block.act-done { animation: pulse-act 1.4s ease-in-out infinite; }
+    .p-block.del-done { animation: pulse-del 1.1s ease-in-out infinite; }
+
+    .pb-id   { font-size: 8px; font-weight: 700; line-height: 1.3; white-space: nowrap; overflow: hidden; }
+    .pb-name { font-size: 7px; line-height: 1.2; white-space: nowrap; overflow: hidden; opacity: .8; }
+
+    /* Tooltip */
+    .p-block .tt {
+      display: none;
+      position: absolute; left: calc(100% + 6px); top: 0;
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 4px; padding: 7px 10px;
+      font-size: 10px; white-space: nowrap; z-index: 100;
+      box-shadow: 0 4px 14px rgba(0,0,0,.1);
+      pointer-events: none;
+    }
+    .p-block:hover .tt { display: block; }
+    .tt-title { font-weight: 700; color: var(--text); margin-bottom: 4px; font-size: 11px; }
+    .tt-row   { color: var(--dim); line-height: 1.6; }
+    .tt-row b { color: var(--sub); font-weight: 600; }
+
+    /* ── NOW line ── */
+    .now-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--now-color);
+      z-index: 30;
+      pointer-events: none;
+    }
+    .now-label {
+      position: absolute;
+      right: 6px;
+      transform: translateY(-50%);
+      background: var(--now-color);
+      color: #fff; font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px;
+      letter-spacing: .04em; white-space: nowrap;
+    }
+
+    /* ── Legend bar ── */
+    .legend-bar {
+      flex: 0 0 28px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 16px;
+    }
+    .lg-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--dim); }
+    .lg-sw   { width: 12px; height: 8px; border-radius: 1px; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<div class="hd">
+  <div class="hd-title">PRODUCTION BOARD</div>
+  <div class="hd-tag">LAYOUT 12</div>
+  <div class="hd-sep"></div>
+  <div class="hd-meta">第1ライン &nbsp;|&nbsp; シフト 08:00 – 17:00 &nbsp;|&nbsp; 残業上限 18:00</div>
+  <div class="hd-kpis">
+    <div class="hd-kpi"><span class="hk-val">5</span><span class="hk-label">計画</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:#4ade80">4</span><span class="hk-label">進行中</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:#fb923c">1</span><span class="hk-label">遅延</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:#94a3b8">0</span><span class="hk-label">完成</span></div>
+  </div>
+  <div class="hd-clock" id="clock">--:--</div>
+  <a href="index.html" class="back-link">← 選択に戻る</a>
+</div>
+
+<!-- ═══════ MAIN ═══════ -->
+<div class="main">
+
+  <!-- Time axis -->
+  <div class="time-axis">
+    <div class="ta-spacer"></div>
+    <div class="ta-track" id="ta-track"></div>
+  </div>
+
+  <!-- Work columns -->
+  <div class="work-cols-outer">
+
+    <!-- Sticky column headers -->
+    <div class="col-headers" id="col-headers"></div>
+
+    <!-- Scrollable track -->
+    <div class="track-area" id="track-area">
+      <div class="track-inner" id="track-inner"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════ LEGEND ═══════ -->
+<div class="legend-bar">
+  <div class="lg-item"><div class="lg-sw" style="background:var(--bg-plan);border:1px solid var(--brd-plan)"></div>計画</div>
+  <div class="lg-item"><div class="lg-sw" style="background:var(--bg-done);border:1px solid var(--brd-done)"></div>完了（定刻）</div>
+  <div class="lg-item"><div class="lg-sw" style="background:var(--bg-late);border:1px solid var(--brd-late)"></div>完了（遅延）</div>
+  <div class="lg-item"><div class="lg-sw" style="background:var(--bg-active);border:1px solid var(--brd-active)"></div>進行中</div>
+  <div class="lg-item"><div class="lg-sw" style="background:rgba(29,78,216,.04);border:1.5px dashed var(--brd-active)"></div>残計画（進行中）</div>
+  <div class="lg-item"><div class="lg-sw" style="background:var(--bg-delay);border:1px solid var(--brd-delay)"></div>遅延進行中</div>
+  <div class="lg-item" style="margin-left:auto"><div class="lg-sw" style="background:#dc2626;height:2px;margin:3px 0"></div>現在時刻 NOW</div>
+</div>
+
+<script>
+// ── Clock ──
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 30000);
+
+// ── Timeline config ──
+const SHIFT_START = 8 * 60;   // 480 min
+const SHIFT_TOTAL = 10 * 60;  // 600 min (08:00 – 18:00)
+const NOW_STR     = '13:30';
+
+function toMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+function pct(t)   { return Math.max(0, Math.min(100, (toMin(t)-SHIFT_START)/SHIFT_TOTAL*100)); }
+function hPct(s,e){ return Math.max(0, (toMin(e)-toMin(s))/SHIFT_TOTAL*100); }
+const NOW_PCT = pct(NOW_STR);
+
+// ── Work & process data ──
+const WORKS = [
+  {
+    id:'WORK A #1', color:'#2563eb',
+    sub:'製品α · A-001', status:'ok', badge:'● 正常進行', bCls:'chb-ok',
+    procs:[
+      {id:'P01',name:'材料投入',  st:'done',      ps:'08:00',pe:'08:30',as:'08:00',ae:'08:28'},
+      {id:'P02',name:'切断加工',  st:'done-late', ps:'08:30',pe:'09:30',as:'08:28',ae:'09:32'},
+      {id:'P03',name:'穴あけ',    st:'done',      ps:'09:30',pe:'10:30',as:'09:32',ae:'10:31'},
+      {id:'P04',name:'組付',      st:'done-late', ps:'10:30',pe:'12:00',as:'10:31',ae:'12:02'},
+      {id:'P05',name:'配線',      st:'done-late', ps:'12:00',pe:'12:50',as:'12:02',ae:'12:52'},
+      {id:'P06',name:'表面処理',  st:'active',    ps:'12:50',pe:'14:00',as:'12:52',ae:null},
+      {id:'P07',name:'中間検査',  st:'idle',      ps:'14:00',pe:'14:30',as:null,   ae:null},
+      {id:'P08',name:'最終組付',  st:'idle',      ps:'14:30',pe:'15:20',as:null,   ae:null},
+      {id:'P09',name:'最終検査',  st:'idle',      ps:'15:20',pe:'15:50',as:null,   ae:null},
+      {id:'P10',name:'出荷梱包',  st:'idle',      ps:'15:50',pe:'16:00',as:null,   ae:null},
+    ],
+  },
+  {
+    id:'WORK A #2', color:'#3b82f6',
+    sub:'製品α · A-002 (P01-05 前S完)', status:'ok', badge:'● 正常進行', bCls:'chb-ok',
+    procs:[
+      {id:'P06',name:'表面処理',  st:'done',      ps:'11:30',pe:'12:15',as:'11:30',ae:'12:14'},
+      {id:'P07',name:'中間検査',  st:'done',      ps:'12:15',pe:'12:45',as:'12:14',ae:'12:44'},
+      {id:'P08',name:'最終組付',  st:'done-late', ps:'12:45',pe:'13:25',as:'12:44',ae:'13:26'},
+      {id:'P09',name:'最終検査',  st:'active',    ps:'13:25',pe:'13:55',as:'13:26',ae:null},
+      {id:'P10',name:'出荷梱包',  st:'idle',      ps:'13:55',pe:'14:15',as:null,   ae:null},
+    ],
+  },
+  {
+    id:'WORK B', color:'#16a34a',
+    sub:'製品β · B-001', status:'warn', badge:'▲ 遅延中', bCls:'chb-warn',
+    procs:[
+      {id:'P11',name:'素材カット',st:'done',      ps:'11:00',pe:'11:36',as:'11:00',ae:'11:35'},
+      {id:'P12',name:'加工',      st:'done-late', ps:'11:36',pe:'12:12',as:'11:35',ae:'12:15'},
+      {id:'P13',name:'検査',      st:'done-late', ps:'12:12',pe:'12:48',as:'12:15',ae:'12:50'},
+      {id:'P14',name:'組立',      st:'done-late', ps:'12:48',pe:'13:24',as:'12:50',ae:'13:28'},
+      {id:'P15',name:'出荷',      st:'delayed',   ps:'13:24',pe:'14:00',as:'13:28',ae:null},
+    ],
+  },
+  {
+    id:'WORK C #1', color:'#ea580c',
+    sub:'製品γ · C-001', status:'ok', badge:'● 正常進行', bCls:'chb-ok',
+    procs:[
+      {id:'P20',name:'製造・検査',st:'active', ps:'12:00',pe:'14:00',as:'12:00',ae:null},
+    ],
+  },
+  {
+    id:'WORK C #2', color:'#9ca3af',
+    sub:'製品γ · C-002', status:'idle', badge:'◎ 待機中', bCls:'chb-idle',
+    procs:[
+      {id:'P20',name:'製造・検査',st:'idle', ps:'14:00',pe:'16:00',as:null,ae:null},
+    ],
+  },
+];
+
+// ── Timeline height (dynamic, filled by CSS flex) ──
+// We'll set min-height on track-inner so 10 hours fit legibly.
+// 1 min = 1.5px → 600 min = 900px minimum
+const TRACK_H_PX = Math.max(900, window.innerHeight - 52 - 72 - 28 - 4);
+
+const trackInner  = document.getElementById('track-inner');
+const colHeaders  = document.getElementById('col-headers');
+const taTrack     = document.getElementById('ta-track');
+
+trackInner.style.height = TRACK_H_PX + 'px';
+taTrack.style.height    = TRACK_H_PX + 'px';
+
+// ── Time axis ticks ──
+for (let h = 8; h <= 18; h++) {
+  const t   = `${String(h).padStart(2,'0')}:00`;
+  const top = pct(t);
+  const tick = document.createElement('div');
+  tick.className = 'ta-tick' + (h % 2 === 0 ? ' major' : '');
+  tick.style.top = top + '%';
+  tick.innerHTML = `<span class="ta-tick-time">${t}</span><span class="ta-tick-line"></span>`;
+  taTrack.appendChild(tick);
+}
+
+// ── NOW line in time-axis ──
+const nowTa = document.createElement('div');
+nowTa.style.cssText = `position:absolute;left:0;right:0;height:2px;background:#dc2626;top:${NOW_PCT}%;z-index:10;pointer-events:none`;
+taTrack.appendChild(nowTa);
+
+// helper: make a process block element
+function makeBlock(cls, topPct, hPctVal, pid, pname, ttHtml) {
+  const blk = document.createElement('div');
+  blk.className = 'p-block ' + cls;
+  blk.style.top    = topPct + '%';
+  blk.style.height = Math.max(hPctVal, 14/TRACK_H_PX*100) + '%';
+  if (hPctVal * TRACK_H_PX / 100 >= 16) {
+    blk.innerHTML =
+      `<div class="pb-id">${pid}</div>` +
+      `<div class="pb-name">${pname}</div>`;
+  } else if (hPctVal * TRACK_H_PX / 100 >= 10) {
+    blk.innerHTML = `<div class="pb-id">${pid}</div>`;
+  }
+  blk.innerHTML += `<div class="tt">${ttHtml}</div>`;
+  return blk;
+}
+
+// ── Build columns ──
+WORKS.forEach(w => {
+  // Column header
+  const hd = document.createElement('div');
+  hd.className = 'col-hd';
+  hd.innerHTML =
+    `<div class="col-hd-name" style="color:${w.color}">${w.id}</div>` +
+    `<span class="col-hd-badge ${w.bCls}">${w.badge}</span>` +
+    `<div class="col-hd-sub">${w.sub}</div>`;
+  colHeaders.appendChild(hd);
+
+  // Column track
+  const col = document.createElement('div');
+  col.className = 'col-track';
+  col.style.height = TRACK_H_PX + 'px';
+
+  // Grid lines
+  for (let h = 8; h <= 18; h++) {
+    const t = `${String(h).padStart(2,'0')}:00`;
+    const g = document.createElement('div');
+    g.className = 'grid-h ' + (h % 2 === 0 ? 'major' : 'minor');
+    g.style.top = pct(t) + '%';
+    col.appendChild(g);
+  }
+
+  // Shift-end zone
+  const ot = document.createElement('div');
+  ot.className = 'shift-end-zone';
+  ot.style.top    = pct('17:00') + '%';
+  ot.style.height = hPct('17:00','18:00') + '%';
+  col.appendChild(ot);
+
+  // Now line
+  const nl = document.createElement('div');
+  nl.className = 'now-line';
+  nl.style.top = NOW_PCT + '%';
+  nl.innerHTML = `<div class="now-label">▶ NOW ${NOW_STR}</div>`;
+  col.appendChild(nl);
+
+  // Process blocks
+  w.procs.forEach(p => {
+    const ttBase =
+      `<div class="tt-title">${p.id} — ${p.name}</div>` +
+      `<div class="tt-row"><b>計画:</b> ${p.ps} – ${p.pe}</div>`;
+
+    // Plan block (always shown)
+    const planBlk = makeBlock(
+      'plan',
+      pct(p.ps), hPct(p.ps, p.pe),
+      p.id, p.name,
+      ttBase + `<div class="tt-row" style="color:var(--c-plan)">計画バー</div>`
+    );
+    col.appendChild(planBlk);
+
+    const ttAct = ttBase + (p.as ? `<div class="tt-row"><b>実績:</b> ${p.as}${p.ae ? ' – '+p.ae : ' – 進行中'}</div>` : '');
+
+    if (p.st === 'done' || p.st === 'done-late') {
+      col.appendChild(makeBlock(
+        p.st === 'done' ? 'done' : 'done-late',
+        pct(p.as), hPct(p.as, p.ae),
+        p.id, p.name, ttAct
+      ));
+
+    } else if (p.st === 'active' || p.st === 'delayed') {
+      const isDel = p.st === 'delayed';
+      const startPct = pct(p.as);
+      const donePct  = NOW_PCT - startPct;
+      const endPct   = pct(p.pe);
+      const remPct   = endPct - NOW_PCT;
+
+      if (donePct > 0) {
+        col.appendChild(makeBlock(
+          isDel ? 'del-done' : 'act-done',
+          startPct, donePct,
+          p.id, p.name, ttAct
+        ));
+      }
+      if (remPct > 0) {
+        col.appendChild(makeBlock(
+          isDel ? 'del-rem' : 'act-rem',
+          NOW_PCT, remPct,
+          p.id, '', ttAct
+        ));
+      }
+    }
+    // idle: plan block only (already added)
+  });
+
+  trackInner.appendChild(col);
+});
+
+// ── Auto-scroll so NOW line is near 40% from top of viewport ──
+const trackArea = document.getElementById('track-area');
+const nowOffsetPx = NOW_PCT / 100 * TRACK_H_PX;
+const targetScroll = nowOffsetPx - trackArea.clientHeight * 0.38;
+trackArea.scrollTop = Math.max(0, targetScroll);
+</script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生産管理板 — レイアウト11</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #09090b;
+      --surface: #111116;
+      --border:  #1e1e26;
+      --text:    #f1f5f9;
+      --dim:     #64748b;
+      --mono:    'Courier New', monospace;
+
+      --ok-fg:      #4ade80;
+      --ok-bg:      rgba(74,222,128,.07);
+      --ok-accent:  #22c55e;
+
+      --warn-fg:    #fb923c;
+      --warn-bg:    rgba(251,146,60,.1);
+      --warn-accent:#f97316;
+
+      --idle-fg:    #6b7280;
+      --idle-bg:    rgba(107,114,128,.04);
+      --idle-accent:#374151;
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'Meiryo', 'Noto Sans JP', sans-serif;
+      user-select: none;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    /* ═══════════ HEADER ═══════════ */
+    .hd {
+      flex: 0 0 54px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 28px; gap: 0;
+    }
+    .hd-title {
+      font-size: 20px; font-weight: 900;
+      letter-spacing: .18em; color: var(--text);
+      text-transform: uppercase; margin-right: 20px;
+    }
+    .hd-sep { width: 1px; height: 22px; background: var(--border); margin: 0 16px; }
+    .hd-meta { font-size: 13px; color: var(--dim); letter-spacing: .04em; }
+    .hd-live {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; color: var(--ok-fg);
+      letter-spacing: .1em; margin-left: 16px;
+    }
+    .hd-live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--ok-fg);
+      animation: blink-dot 1.8s ease-in-out infinite;
+    }
+    @keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .hd-clock {
+      font-family: var(--mono); font-size: 22px;
+      font-weight: 300; color: var(--text);
+      letter-spacing: .06em; margin-left: auto;
+    }
+    .hd-kpis { display: flex; gap: 4px; margin-left: 24px; }
+    .hd-kpi {
+      display: flex; flex-direction: column; align-items: center;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 14px; min-width: 56px;
+    }
+    .hk-val   { font-family: var(--mono); font-size: 20px; line-height: 1; }
+    .hk-label { font-size: 9px; color: var(--dim); letter-spacing: .05em; margin-top: 1px; }
+    .back-link {
+      font-size: 11px; color: var(--dim); text-decoration: none;
+      margin-left: 20px; padding: 4px 10px;
+      border: 1px solid var(--border); border-radius: 3px;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--dim); }
+
+    /* ═══════════ BOARD ═══════════ */
+    .board {
+      flex: 1 1 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Work row ── */
+    .work-row {
+      flex: 1 1 0;
+      display: grid;
+      /* left | center | right */
+      grid-template-columns: 300px 1fr 310px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: background .4s;
+    }
+    .work-row:last-child { border-bottom: none; }
+
+    /* Left accent bar */
+    .work-row::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 5px; z-index: 2;
+    }
+    .work-row.s-ok   { background: var(--ok-bg); }
+    .work-row.s-ok::before   { background: var(--ok-accent); }
+    .work-row.s-warn { background: var(--warn-bg); }
+    .work-row.s-warn::before { background: var(--warn-accent); }
+    .work-row.s-idle { background: var(--idle-bg); }
+    .work-row.s-idle::before { background: var(--idle-accent); }
+
+    @keyframes warn-pulse {
+      0%,100% { background: var(--warn-bg); }
+      50%      { background: rgba(251,146,60,.17); }
+    }
+    .work-row.s-warn { animation: warn-pulse 2.2s ease-in-out infinite; }
+
+    /* ── LEFT: identity ── */
+    .wr-left {
+      padding: 0 16px 0 28px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 7px;
+      border-right: 1px solid var(--border);
+    }
+    .wr-name {
+      font-size: 44px; font-weight: 800;
+      line-height: 1; letter-spacing: .02em;
+    }
+    .wr-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 700; letter-spacing: .08em;
+      padding: 3px 10px; border-radius: 3px; width: fit-content;
+    }
+    .wb-ok   { background: rgba(74,222,128,.12); color: var(--ok-fg);   border:1px solid rgba(74,222,128,.28); }
+    .wb-warn { background: rgba(251,146,60,.14); color: var(--warn-fg); border:1px solid rgba(251,146,60,.32); }
+    .wb-idle { background: rgba(107,114,128,.1); color: var(--idle-fg); border:1px solid rgba(107,114,128,.22); }
+    .wr-sub { font-size: 12px; color: var(--dim); letter-spacing: .02em; }
+
+    /* ── CENTER: current process ── */
+    .wr-center {
+      padding: 0 24px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 6px;
+      border-right: 1px solid var(--border);
+    }
+    .wr-proc-tag {
+      font-size: 12px; font-weight: 700; color: var(--dim);
+      letter-spacing: .1em; text-transform: uppercase;
+    }
+    .wr-proc-name { font-size: 30px; font-weight: 600; line-height: 1.2; }
+    .wr-proc-name.idle-text { color: var(--dim); }
+    .wr-delay-line {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 18px; font-weight: 700; color: var(--warn-fg);
+    }
+    .wr-dots {
+      display: flex; align-items: center; gap: 3px; flex-wrap: nowrap;
+      margin-top: 2px;
+    }
+    .wd {
+      flex: 0 0 auto;
+      border-radius: 50%;
+    }
+    .wd-sm  { width: 9px;  height: 9px; }
+    .wd-done      { background: var(--ok-accent); }
+    .wd-done-late { background: #eab308; }
+    .wd-active    { background: #3b82f6; box-shadow: 0 0 5px rgba(59,130,246,.7); }
+    .wd-delayed   { background: var(--warn-accent); box-shadow: 0 0 5px rgba(249,115,22,.7); }
+    .wd-idle      { background: transparent; border: 1px solid var(--border); }
+    .wd-prev      { background: transparent; border: 1px dashed var(--dim); }
+    .wd-sep { width: 6px; height: 1px; background: var(--border); flex: 0 0 6px; border-radius: 1px; }
+
+    /* ── RIGHT: progress + ETA ── */
+    .wr-right {
+      padding: 0 28px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 10px;
+    }
+    .wr-prog-wrap { display: flex; flex-direction: column; gap: 5px; }
+    .wr-prog-track {
+      height: 18px;
+      background: rgba(255,255,255,.06);
+      border-radius: 2px;
+      position: relative; overflow: visible;
+    }
+    .wr-prog-fill { height: 100%; border-radius: 2px; position: relative; }
+    /* Stripe on active fill */
+    .wr-prog-fill.stripe {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent, transparent 5px,
+        rgba(255,255,255,.08) 5px, rgba(255,255,255,.08) 10px
+      );
+    }
+    .wr-prog-target {
+      position: absolute; top: -4px; bottom: -4px;
+      width: 2px; background: rgba(255,255,255,.45);
+      border-radius: 1px; transform: translateX(-50%);
+    }
+    .wr-prog-nums {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--dim);
+    }
+    .wr-prog-nums strong { font-family: var(--mono); font-size: 14px; color: var(--text); }
+
+    .wr-eta {
+      font-family: var(--mono);
+      font-size: 52px; font-weight: 300;
+      line-height: 1; letter-spacing: .05em;
+    }
+    .wr-eta.ok   { color: var(--ok-fg); }
+    .wr-eta.warn { color: var(--warn-fg); }
+    .wr-eta.idle { color: var(--dim); }
+    .wr-eta-sub { font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+    .wr-eta-sub.ok   { color: var(--ok-fg); }
+    .wr-eta-sub.warn { color: var(--warn-fg); }
+    .wr-eta-sub.idle { color: var(--dim); }
+
+    /* ═══════════ ALERT TICKER ═══════════ */
+    .ticker {
+      flex: 0 0 32px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center;
+      overflow: hidden; position: relative;
+    }
+    .ticker-label {
+      flex: 0 0 auto;
+      padding: 0 14px;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      color: var(--warn-fg); border-right: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .ticker-track {
+      flex: 1; overflow: hidden;
+      position: relative; height: 100%;
+    }
+    .ticker-inner {
+      display: flex; align-items: center; gap: 36px;
+      position: absolute; white-space: nowrap;
+      animation: ticker-scroll 26s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 11px; color: var(--dim);
+    }
+    .ticker-item .ti-time { font-family: var(--mono); color: var(--dim); }
+    .ticker-item .ti-icon-warn { color: var(--warn-fg); }
+    .ticker-item .ti-icon-ok   { color: var(--ok-fg); }
+    .ticker-item .ti-msg-warn { color: rgba(251,146,60,.85); }
+    .ticker-item .ti-msg-ok   { color: rgba(74,222,128,.7); }
+    .ticker-sep { color: var(--border); font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<div class="hd">
+  <div class="hd-title">Production Board</div>
+  <div class="hd-sep"></div>
+  <div class="hd-meta">第1ライン &nbsp;／&nbsp; シフト 08:00–17:00</div>
+  <div class="hd-live"><div class="hd-live-dot"></div>LIVE</div>
+  <div class="hd-sep"></div>
+  <div class="hd-kpis">
+    <div class="hd-kpi"><span class="hk-val" style="color:#94a3b8">5</span><span class="hk-label">計画</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:var(--ok-fg)">4</span><span class="hk-label">進行中</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:var(--warn-fg)">1</span><span class="hk-label">遅延</span></div>
+    <div class="hd-kpi"><span class="hk-val" style="color:var(--idle-fg)">0</span><span class="hk-label">完成</span></div>
+  </div>
+  <div class="hd-clock" id="clock">--:--</div>
+  <a href="index.html" class="back-link">← 選択に戻る</a>
+</div>
+
+<!-- ═══════ BOARD ═══════ -->
+<div class="board" id="board"></div>
+
+<!-- ═══════ TICKER ═══════ -->
+<div class="ticker">
+  <div class="ticker-label">⚠ ALERT LOG</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="ticker-inner"></div>
+  </div>
+</div>
+
+<script>
+// ── Clock ──
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 30000);
+
+// ── Work data ──
+const WORKS = [
+  {
+    id:'WORK A #1', sub:'製品α &nbsp;·&nbsp; LOT: A-001',
+    color:'#60a5fa', status:'ok', badge:'● 正常進行', bCls:'wb-ok',
+    proc:'P06', procName:'表面処理', pct:50, planPct:57,
+    barColor:'#3b82f6',
+    eta:'16:00', etaSts:'ok', etaSub:'定時内完了',
+    dots:[
+      {s:'done'},{s:'done-late'},{s:'done'},{s:'done-late'},{s:'done-late'},
+      {s:'active'},{s:'idle'},{s:'idle'},{s:'idle'},{s:'idle'}
+    ],
+    delay: null,
+  },
+  {
+    id:'WORK A #2', sub:'製品α &nbsp;·&nbsp; LOT: A-002',
+    color:'#93c5fd', status:'ok', badge:'● 正常進行', bCls:'wb-ok',
+    proc:'P09', procName:'最終検査', pct:80, planPct:80,
+    barColor:'#3b82f6',
+    eta:'14:15', etaSts:'ok', etaSub:'定時内完了',
+    dots:[
+      {s:'prev'},{s:'prev'},{s:'prev'},{s:'prev'},{s:'prev'},
+      {s:'done'},{s:'done'},{s:'done-late'},{s:'active'},{s:'idle'}
+    ],
+    delay: null,
+  },
+  {
+    id:'WORK B', sub:'製品β &nbsp;·&nbsp; LOT: B-001',
+    color:'#f87171', status:'warn', badge:'▲ 遅延中', bCls:'wb-warn',
+    proc:'P15', procName:'出荷', pct:80, planPct:80,
+    barColor:'#f97316',
+    eta:'14:04', etaSts:'warn', etaSub:'+4分遅延',
+    dots:[
+      {s:'done'},{s:'done-late'},{s:'done-late'},{s:'done-late'},{s:'delayed'}
+    ],
+    delay: '+4分',
+  },
+  {
+    id:'WORK C #1', sub:'製品γ &nbsp;·&nbsp; LOT: C-001',
+    color:'#fb923c', status:'ok', badge:'● 正常進行', bCls:'wb-ok',
+    proc:'P20', procName:'製造・検査一体', pct:75, planPct:75,
+    barColor:'#f97316',
+    eta:'14:00', etaSts:'ok', etaSub:'定時内完了',
+    dots:[{s:'active'}],
+    delay: null,
+  },
+  {
+    id:'WORK C #2', sub:'製品γ &nbsp;·&nbsp; LOT: C-002',
+    color:'#6b7280', status:'idle', badge:'◎ 待機中', bCls:'wb-idle',
+    proc:'P20', procName:'製造・検査一体', pct:0, planPct:0,
+    barColor:'#6b7280',
+    eta:'16:00', etaSts:'idle', etaSub:'14:00 開始予定',
+    dots:[{s:'idle'}],
+    delay: null,
+  },
+];
+
+// Sort: warn first, then ok, then idle
+const ORDER = {warn:0, ok:1, idle:2};
+WORKS.sort((a,b) => ORDER[a.status] - ORDER[b.status]);
+
+// ── Dot state → class ──
+const DOT_CLS = {
+  done:'wd-done', 'done-late':'wd-done-late',
+  active:'wd-active', delayed:'wd-delayed',
+  idle:'wd-idle', prev:'wd-prev',
+};
+
+// ── Build rows ──
+const board = document.getElementById('board');
+
+WORKS.forEach(w => {
+  const row = document.createElement('div');
+  row.className = `work-row s-${w.status}`;
+
+  // ── LEFT ──
+  const left = document.createElement('div');
+  left.className = 'wr-left';
+  left.innerHTML =
+    `<div class="wr-name" style="color:${w.color}">${w.id}</div>` +
+    `<span class="wr-badge ${w.bCls}">${w.badge}</span>` +
+    `<div class="wr-sub">${w.sub}</div>`;
+
+  // ── CENTER ──
+  const center = document.createElement('div');
+  center.className = 'wr-center';
+
+  const procTag = `<div class="wr-proc-tag">現在工程</div>`;
+  let procName = '';
+  if (w.status === 'idle') {
+    procName = `<div class="wr-proc-name idle-text">待機中 — 開始待ち</div>`;
+  } else {
+    procName = `<div class="wr-proc-name">${w.proc} &nbsp;${w.procName}</div>`;
+  }
+  let delayLine = '';
+  if (w.delay) {
+    delayLine = `<div class="wr-delay-line">⚠ 計画比 ${w.delay} 遅延</div>`;
+  }
+
+  // Process dots
+  const dotsDiv = document.createElement('div');
+  dotsDiv.className = 'wr-dots';
+  w.dots.forEach((d, i) => {
+    if (i > 0) {
+      const sep = document.createElement('div');
+      sep.className = 'wd wd-sep';
+      dotsDiv.appendChild(sep);
+    }
+    const dot = document.createElement('div');
+    dot.className = `wd wd-sm ${DOT_CLS[d.s] || 'wd-idle'}`;
+    dotsDiv.appendChild(dot);
+  });
+
+  center.innerHTML = procTag + procName + delayLine;
+  center.appendChild(dotsDiv);
+
+  // ── RIGHT ──
+  const right = document.createElement('div');
+  right.className = 'wr-right';
+
+  // Progress bar
+  const progHtml =
+    `<div class="wr-prog-wrap">` +
+      `<div class="wr-prog-track">` +
+        `<div class="wr-prog-fill ${w.status==='ok'?'stripe':''}"
+          style="width:${w.pct}%;background:${w.barColor}"></div>` +
+        (w.planPct > 0 ? `<div class="wr-prog-target" style="left:${w.planPct}%"></div>` : '') +
+      `</div>` +
+      `<div class="wr-prog-nums">` +
+        `<span><strong>${w.pct}%</strong> 完了</span>` +
+        `<span>計画 ${w.planPct}%</span>` +
+      `</div>` +
+    `</div>`;
+
+  // ETA
+  const etaHtml =
+    `<div class="wr-eta ${w.etaSts}">${w.eta}</div>` +
+    `<div class="wr-eta-sub ${w.etaSts}">${w.etaSub}</div>`;
+
+  right.innerHTML = progHtml + etaHtml;
+
+  row.appendChild(left);
+  row.appendChild(center);
+  row.appendChild(right);
+  board.appendChild(row);
+});
+
+// ── Ticker ──
+const ALERTS = [
+  { time:'13:28', icon:'warn', msg:'WORK B &nbsp; P15 出荷 開始（+4分遅延）' },
+  { time:'12:50', icon:'warn', msg:'WORK B &nbsp; P14 組立 完了（+2分遅延）' },
+  { time:'12:15', icon:'warn', msg:'WORK B &nbsp; P13 検査 完了（+3分遅延）' },
+  { time:'12:00', icon:'ok',   msg:'WORK C #1 &nbsp; P20 製造・検査 定刻開始' },
+  { time:'11:30', icon:'ok',   msg:'WORK A #2 &nbsp; P06 表面処理 定刻開始' },
+  { time:'08:00', icon:'ok',   msg:'全ライン 始業確認 OK' },
+];
+
+const inner = document.getElementById('ticker-inner');
+// Double items for seamless loop
+[...ALERTS, ...ALERTS].forEach((a, i) => {
+  if (i > 0) {
+    const sep = document.createElement('span');
+    sep.className = 'ticker-sep';
+    sep.textContent = '·';
+    inner.appendChild(sep);
+  }
+  const item = document.createElement('div');
+  item.className = 'ticker-item';
+  item.innerHTML =
+    `<span class="ti-time">${a.time}</span>` +
+    `<span class="ti-icon-${a.icon}">${a.icon==='warn'?'⚠':'✓'}</span>` +
+    `<span class="ti-msg-${a.icon}">${a.msg}</span>`;
+  inner.appendChild(item);
+});
+</script>
+</body>
+</html>

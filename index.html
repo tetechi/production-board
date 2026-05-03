@@ -253,6 +253,53 @@
     }
     .badge-gf { background: #fff7ed; color: #7a4100; border: 1px solid #fdba74; }
 
+    /* Original group */
+    .layout-card.orig::before {
+      background: linear-gradient(90deg, #0f0f0f, #dc2626);
+    }
+    .layout-card.orig .lc-number { color: #dc2626; }
+    .layout-card.orig:hover {
+      border-color: var(--border2);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      cursor: pointer;
+    }
+    .lc-orig-tag {
+      position: absolute;
+      top: 14px; right: 14px;
+      font-size: 9px;
+      color: #7f1d1d;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 3px;
+      padding: 1px 5px;
+      letter-spacing: .04em;
+    }
+    .badge-orig { background: #fef2f2; color: #7f1d1d; border: 1px solid #fca5a5; }
+
+    .layout-card.vert::before {
+      background: linear-gradient(90deg, #0f4c75, #0ea5e9);
+    }
+    .layout-card.vert .lc-number { color: #0369a1; }
+    .layout-card.vert:hover {
+      border-color: var(--border2);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      cursor: pointer;
+    }
+    .lc-vert-tag {
+      position: absolute;
+      top: 14px; right: 14px;
+      font-size: 9px;
+      color: #0c4a6e;
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      border-radius: 3px;
+      padding: 1px 5px;
+      letter-spacing: .04em;
+    }
+    .badge-vert { background: #e0f2fe; color: #0c4a6e; border: 1px solid #7dd3fc; }
+
     .footer {
       margin-top: 40px;
       font-size: 11px;
@@ -446,6 +493,40 @@
       Stat・Gantt・Bar Gauge・<br>Log Table を組み合わせた監視盤
     </div>
     <span class="lc-badge badge-gf">公開中</span>
+  </a>
+
+</div>
+
+<!-- レイアウトカード グループ 5 — オリジナル -->
+<div class="cards-group-label">
+  <span class="cgl-text">ORIGINAL</span>
+  <span class="cgl-line"></span>
+  <span style="font-size:10px;color:var(--dim);white-space:nowrap;">Claude が考えた「もっとこうすべき」</span>
+  <span class="cgl-line"></span>
+</div>
+<div class="cards">
+
+  <a href="layout-11.html" class="layout-card active orig">
+    <div class="lc-number">11</div>
+    <div class="lc-label">LAYOUT 11</div>
+    <div class="lc-orig-tag">現場 TV 用</div>
+    <div class="lc-desc">
+      大型表示盤型（アンドン）<br>
+      遅延を最上段に自動ソート<br>
+      5m離れても読める大文字
+    </div>
+    <span class="lc-badge badge-orig">公開中</span>
+  </a>
+
+  <a href="layout-12.html" class="layout-card active vert">
+    <div class="lc-number">12</div>
+    <div class="lc-label">LAYOUT 12</div>
+    <div class="lc-vert-tag">縦軸時間</div>
+    <div class="lc-desc">
+      縦軸タイムライン型<br>
+      時間軸を縦に・NOW線で<br>過去／未来を一目で対比
+    </div>
+    <span class="lc-badge badge-vert">公開中</span>
   </a>
 
 </div>
